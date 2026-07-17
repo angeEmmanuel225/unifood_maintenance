@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIFOOD TOGO — Espace Responsable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-loader" id="page-loader"><span class="spinner dark"></span></div>
+
+<div id="app" style="display:none;">
+  <header class="topbar">
+    <div class="brand-mark">
+      <svg width="30" height="30" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g stroke="#FFFFFF" stroke-width="2.6" opacity="0.9"><circle cx="24" cy="24" r="16" /></g>
+        <g fill="#FFFFFF" opacity="0.9">
+          <rect x="22" y="4" width="4" height="7" rx="1.5"/><rect x="22" y="37" width="4" height="7" rx="1.5"/>
+          <rect x="4" y="22" width="7" height="4" rx="1.5"/><rect x="37" y="22" width="7" height="4" rx="1.5"/>
+          <rect x="22" y="4" width="4" height="7" rx="1.5" transform="rotate(45 24 24)"/>
+          <rect x="22" y="37" width="4" height="7" rx="1.5" transform="rotate(45 24 24)"/>
+          <rect x="4" y="22" width="7" height="4" rx="1.5" transform="rotate(45 24 24)"/>
+          <rect x="37" y="22" width="7" height="4" rx="1.5" transform="rotate(45 24 24)"/>
+        </g>
+        <path d="M13 24 L18.5 19.5 L18.5 28.5 Z" fill="#7A3B2E"/>
+        <path d="M35 24 L29.5 19.5 L29.5 28.5 Z" fill="#7A3B2E"/>
+        <rect x="17.5" y="19" width="13" height="10" rx="5" fill="#7A3B2E"/>
+      </svg>
+      <div class="brand-text">
+        <strong>UNIFOOD TOGO</strong>
+        <span>Espace Responsable</span>
+      </div>
+    </div>
+
+    <div class="user-pill">
+      <div class="user-meta">
+        <strong id="user-name">—</strong>
+        <span id="user-dept">Responsable maintenance</span>
+      </div>
+      <div class="avatar" id="user-avatar">--</div>
+      <button class="icon-btn" id="logout-btn" title="Se déconnecter" aria-label="Se déconnecter"></button>
+    </div>
+  </header>
+
+  <main class="shell-container">
+    <div class="stat-row" id="stat-row">
+      <div class="stat-card">
+        <div class="stat-dial" id="ic-stat-1"></div>
+        <div><div class="stat-value" id="stat-today">—</div><div class="stat-label">Rapports aujourd'hui</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-dial" id="ic-stat-2"></div>
+        <div><div class="stat-value" id="stat-encours">—</div><div class="stat-label">Pannes en cours</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-dial" id="ic-stat-3"></div>
+        <div><div class="stat-value" id="stat-attente">—</div><div class="stat-label">Commandes en attente</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-dial" id="ic-stat-4"></div>
+        <div><div class="stat-value" id="stat-urgentes">—</div><div class="stat-label">Commandes urgentes</div></div>
+      </div>
+    </div>
+
+    <nav class="tab-strip">
+      <button class="tab-btn active" data-tab="rapports" id="tab-rapports"></button>
+      <button class="tab-btn" data-tab="commandes" id="tab-commandes"></button>
+    </nav>
+
+    <!-- ================= RAPPORTS REÇUS ================= -->
+    <section class="tab-panel active" id="panel-rapports">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div><h3>Rapports reçus</h3><p>Tous les rapports journaliers envoyés par les techniciens.</p></div>
+          <button class="btn btn-outline btn-sm" id="btn-export-reports-pdf"></button>
+        </div>
+
+        <div class="filter-bar">
+          <div class="field">
+            <label>Département</label>
+            <select id="fr-departement"><option value="">Tous</option></select>
+          </div>
+          <div class="field">
+            <label>Statut panne</label>
+            <select id="fr-statut-panne">
+              <option value="">Tous</option>
+              <option value="Résolue">Résolue</option>
+              <option value="En cours">En cours</option>
+              <option value="Non résolue">Non résolue</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Statut rapport</label>
+            <select id="fr-statut-rapport">
+              <option value="">Tous</option>
+              <option value="Nouveau">Nouveau</option>
+              <option value="Lu">Lu</option>
+              <option value="Traité">Traité</option>
+            </select>
+          </div>
+          <div class="field"><label>Du</label><input type="date" id="fr-date-debut"></div>
+          <div class="field"><label>Au</label><input type="date" id="fr-date-fin"></div>
+          <div class="field"><label>Recherche</label><input type="text" id="fr-recherche" placeholder="Machine, panne, technicien..."></div>
+          <button class="btn btn-outline btn-sm" id="fr-btn-filtrer">Filtrer</button>
+          <button class="btn btn-ghost btn-sm" id="fr-btn-reset">Réinitialiser</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Technicien</th><th>Département</th><th>Horaire</th><th>Machine</th>
+                <th>Statut panne</th><th>Statut rapport</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="reports-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= COMMANDES REÇUES ================= -->
+    <section class="tab-panel" id="panel-commandes">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div><h3>Commandes reçues</h3><p>Toutes les demandes de pièces et consommables des techniciens.</p></div>
+          <button class="btn btn-outline btn-sm" id="btn-export-orders-excel"></button>
+        </div>
+
+        <div class="filter-bar">
+          <div class="field">
+            <label>Département</label>
+            <select id="fo-departement"><option value="">Tous</option></select>
+          </div>
+          <div class="field">
+            <label>Statut</label>
+            <select id="fo-statut">
+              <option value="">Tous</option>
+              <option value="En attente">En attente</option>
+              <option value="Validée">Validée</option>
+              <option value="Rejetée">Rejetée</option>
+              <option value="Livrée">Livrée</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Urgence</label>
+            <select id="fo-urgence">
+              <option value="">Toutes</option>
+              <option value="Normale">Normale</option>
+              <option value="Urgente">Urgente</option>
+              <option value="Critique">Critique</option>
+            </select>
+          </div>
+          <div class="field"><label>Du</label><input type="date" id="fo-date-debut"></div>
+          <div class="field"><label>Au</label><input type="date" id="fo-date-fin"></div>
+          <div class="field"><label>Recherche</label><input type="text" id="fo-recherche" placeholder="Désignation, référence, technicien..."></div>
+          <button class="btn btn-outline btn-sm" id="fo-btn-filtrer">Filtrer</button>
+          <button class="btn btn-ghost btn-sm" id="fo-btn-reset">Réinitialiser</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Technicien</th><th>Département</th><th>Désignation</th><th>Qté</th>
+                <th>Urgence</th><th>Statut</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast-region"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-card" id="modal-card"></div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

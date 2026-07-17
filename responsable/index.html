@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIFOOD TOGO — Connexion Responsable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="login-shell">
+  <div class="login-brand">
+    <div>
+      <div class="brand-mark">
+        <svg width="42" height="42" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g stroke="#FFFFFF" stroke-width="2.4" opacity="0.9">
+            <circle cx="24" cy="24" r="16" />
+          </g>
+          <g fill="#FFFFFF" opacity="0.9">
+            <rect x="22" y="4" width="4" height="7" rx="1.5"/>
+            <rect x="22" y="37" width="4" height="7" rx="1.5"/>
+            <rect x="4" y="22" width="7" height="4" rx="1.5"/>
+            <rect x="37" y="22" width="7" height="4" rx="1.5"/>
+            <rect x="22" y="4" width="4" height="7" rx="1.5" transform="rotate(45 24 24)"/>
+            <rect x="22" y="37" width="4" height="7" rx="1.5" transform="rotate(45 24 24)"/>
+            <rect x="4" y="22" width="7" height="4" rx="1.5" transform="rotate(45 24 24)"/>
+            <rect x="37" y="22" width="7" height="4" rx="1.5" transform="rotate(45 24 24)"/>
+          </g>
+          <path d="M13 24 L18.5 19.5 L18.5 28.5 Z" fill="#7A3B2E"/>
+          <path d="M35 24 L29.5 19.5 L29.5 28.5 Z" fill="#7A3B2E"/>
+          <rect x="17.5" y="19" width="13" height="10" rx="5" fill="#7A3B2E"/>
+        </svg>
+        <div class="brand-text">
+          <strong>UNIFOOD TOGO</strong>
+          <span>Usine de confiserie</span>
+        </div>
+      </div>
+
+      <div class="eyebrow" style="margin-top:40px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+        Espace Responsable
+      </div>
+      <h1>Toute la maintenance de l'usine, sur un seul tableau de bord.</h1>
+      <p class="lead">Recevez les rapports de vos techniciens en temps réel, suivez les pannes en cours et validez les commandes de pièces — puis exportez tout en PDF, Word ou Excel.</p>
+    </div>
+
+    <div class="brand-footer">
+      <span style="font-size:0.78rem; color:rgba(255,255,255,0.45);">Supervision · Validation · Export PDF / Word / Excel</span>
+    </div>
+    <div class="hazard-strip"></div>
+  </div>
+
+  <div class="login-form-panel">
+    <div class="ticket-card">
+      <div class="ticket-eyebrow">Fiche de connexion · Responsable</div>
+      <h2>Bon retour</h2>
+      <p class="subtitle">Connectez-vous pour accéder au tableau de bord maintenance.</p>
+
+      <div class="form-error" id="login-error"></div>
+
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="email">Adresse email</label>
+          <input type="email" id="email" name="email" placeholder="responsable@unifoodtogo.tg" required autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" id="login-submit">Se connecter</button>
+      </form>
+
+      <div class="demo-box">
+        <strong>Compte de démonstration</strong><br>
+        responsable@unifoodtogo.tg · mot de passe : Responsable@2026<br>
+        <span style="opacity:0.8;">(à changer après le premier lancement)</span>
+      </div>
+
+      <div class="switch-link">
+        Vous êtes technicien ? <a href="../technicien/index.html">Accéder à l'espace technicien →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>

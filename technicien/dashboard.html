@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIFOOD TOGO — Espace Technicien</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-loader" id="page-loader"><span class="spinner dark"></span></div>
+
+<div id="app" style="display:none;">
+  <header class="topbar">
+    <div class="brand-mark">
+      <svg width="30" height="30" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g stroke="#FFFFFF" stroke-width="2.6" opacity="0.9"><circle cx="24" cy="24" r="16" /></g>
+        <g fill="#FFFFFF" opacity="0.9">
+          <rect x="22" y="4" width="4" height="7" rx="1.5"/><rect x="22" y="37" width="4" height="7" rx="1.5"/>
+          <rect x="4" y="22" width="7" height="4" rx="1.5"/><rect x="37" y="22" width="7" height="4" rx="1.5"/>
+          <rect x="22" y="4" width="4" height="7" rx="1.5" transform="rotate(45 24 24)"/>
+          <rect x="22" y="37" width="4" height="7" rx="1.5" transform="rotate(45 24 24)"/>
+          <rect x="4" y="22" width="7" height="4" rx="1.5" transform="rotate(45 24 24)"/>
+          <rect x="37" y="22" width="7" height="4" rx="1.5" transform="rotate(45 24 24)"/>
+        </g>
+        <path d="M13 24 L18.5 19.5 L18.5 28.5 Z" fill="#C9722A"/>
+        <path d="M35 24 L29.5 19.5 L29.5 28.5 Z" fill="#C9722A"/>
+        <rect x="17.5" y="19" width="13" height="10" rx="5" fill="#C9722A"/>
+      </svg>
+      <div class="brand-text">
+        <strong>UNIFOOD TOGO</strong>
+        <span>Espace Technicien</span>
+      </div>
+    </div>
+
+    <div class="user-pill">
+      <div class="user-meta">
+        <strong id="user-name">—</strong>
+        <span id="user-dept">—</span>
+      </div>
+      <div class="avatar" id="user-avatar">--</div>
+      <button class="icon-btn" id="logout-btn" title="Se déconnecter" aria-label="Se déconnecter"></button>
+    </div>
+  </header>
+
+  <main class="shell-container">
+    <div class="stat-row" id="stat-row">
+      <div class="stat-card">
+        <div class="stat-dial" id="ic-stat-1"></div>
+        <div><div class="stat-value" id="stat-today">—</div><div class="stat-label">Rapports aujourd'hui</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-dial" id="ic-stat-2"></div>
+        <div><div class="stat-value" id="stat-encours">—</div><div class="stat-label">Pannes en cours</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-dial" id="ic-stat-3"></div>
+        <div><div class="stat-value" id="stat-attente">—</div><div class="stat-label">Commandes en attente</div></div>
+      </div>
+    </div>
+
+    <nav class="tab-strip">
+      <button class="tab-btn active" data-tab="nouveau-rapport" id="tab-nouveau-rapport"></button>
+      <button class="tab-btn" data-tab="nouvelle-commande" id="tab-nouvelle-commande"></button>
+      <button class="tab-btn" data-tab="mes-rapports" id="tab-mes-rapports"></button>
+      <button class="tab-btn" data-tab="mes-commandes" id="tab-mes-commandes"></button>
+    </nav>
+
+    <!-- ================= NOUVEAU RAPPORT ================= -->
+    <section class="tab-panel active" id="panel-nouveau-rapport">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <h3>Nouveau rapport journalier</h3>
+            <p>Consignez la panne rencontrée, l'action menée et les horaires du shift.</p>
+          </div>
+        </div>
+        <form id="report-form" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="r-date">Date du rapport</label>
+              <input type="date" id="r-date" required>
+            </div>
+            <div class="field">
+              <label for="r-horaire">Horaire de travail</label>
+              <select id="r-horaire" required>
+                <option value="">Sélectionner...</option>
+                <option value="06h-14h">06h — 14h</option>
+                <option value="14h-22h">14h — 22h</option>
+                <option value="22h-06h">22h — 06h</option>
+                <option value="Journée 08h-16h">Journée 08h — 16h</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="r-departement">Département</label>
+              <select id="r-departement" required></select>
+            </div>
+            <div class="field">
+              <label for="r-responsable">Responsable de département</label>
+              <input type="text" id="r-responsable" required placeholder="Nom du responsable">
+            </div>
+            <div class="field">
+              <label for="r-machine">Machine concernée</label>
+              <input type="text" id="r-machine" required placeholder="Ex : Four tunnel N°2">
+            </div>
+            <div class="field">
+              <label for="r-statut">Statut de la panne</label>
+              <select id="r-statut" required>
+                <option value="Résolue">Résolue</option>
+                <option value="En cours">En cours</option>
+                <option value="Non résolue">Non résolue</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="r-heure-debut">Heure de début</label>
+              <input type="time" id="r-heure-debut" required>
+            </div>
+            <div class="field">
+              <label for="r-heure-fin">Heure de fin</label>
+              <input type="time" id="r-heure-fin" required>
+            </div>
+            <div class="field full">
+              <label for="r-panne">Description de la panne</label>
+              <textarea id="r-panne" required placeholder="Décrivez le problème rencontré sur la machine..."></textarea>
+            </div>
+            <div class="field full">
+              <label for="r-action">Action menée</label>
+              <textarea id="r-action" required placeholder="Décrivez l'intervention réalisée..."></textarea>
+            </div>
+            <div class="field full">
+              <label for="r-observations">Observations <small class="hint">(optionnel)</small></label>
+              <textarea id="r-observations" placeholder="Remarques additionnelles, pièces à surveiller, etc."></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="reset" class="btn btn-outline">Effacer</button>
+            <button type="submit" class="btn btn-primary" id="report-submit" style="width:auto;">Enregistrer le rapport</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= NOUVELLE COMMANDE ================= -->
+    <section class="tab-panel" id="panel-nouvelle-commande">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <h3>Nouvelle commande</h3>
+            <p>Demandez une pièce ou un consommable nécessaire à votre intervention.</p>
+          </div>
+        </div>
+        <form id="order-form" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="o-departement">Département</label>
+              <select id="o-departement" required></select>
+            </div>
+            <div class="field">
+              <label for="o-urgence">Niveau d'urgence</label>
+              <select id="o-urgence" required>
+                <option value="Normale">Normale</option>
+                <option value="Urgente">Urgente</option>
+                <option value="Critique">Critique</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="o-designation">Désignation de la pièce / produit</label>
+              <input type="text" id="o-designation" required placeholder="Ex : Courroie de convoyeur">
+            </div>
+            <div class="field">
+              <label for="o-reference">Référence <small class="hint">(optionnel)</small></label>
+              <input type="text" id="o-reference" placeholder="Ex : REF-2245">
+            </div>
+            <div class="field">
+              <label for="o-quantite">Quantité</label>
+              <input type="number" id="o-quantite" min="1" step="1" required placeholder="1">
+            </div>
+            <div class="field">
+              <label for="o-unite">Unité</label>
+              <select id="o-unite">
+                <option value="pièce">pièce</option>
+                <option value="kg">kg</option>
+                <option value="litre">litre</option>
+                <option value="mètre">mètre</option>
+                <option value="sachet">sachet</option>
+                <option value="autre">autre</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="o-date-souhaitee">Date souhaitée <small class="hint">(optionnel)</small></label>
+              <input type="date" id="o-date-souhaitee">
+            </div>
+            <div class="field full">
+              <label for="o-motif">Motif / justification</label>
+              <textarea id="o-motif" required placeholder="Pourquoi cette pièce est-elle nécessaire ?"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="reset" class="btn btn-outline">Effacer</button>
+            <button type="submit" class="btn btn-primary" id="order-submit" style="width:auto;">Envoyer la commande</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= MES RAPPORTS ================= -->
+    <section class="tab-panel" id="panel-mes-rapports">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div><h3>Mes rapports</h3><p>Historique de vos rapports journaliers envoyés.</p></div>
+        </div>
+        <div class="filter-bar">
+          <div class="field">
+            <label>Statut panne</label>
+            <select id="fr-statut-panne">
+              <option value="">Tous</option>
+              <option value="Résolue">Résolue</option>
+              <option value="En cours">En cours</option>
+              <option value="Non résolue">Non résolue</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Du</label>
+            <input type="date" id="fr-date-debut">
+          </div>
+          <div class="field">
+            <label>Au</label>
+            <input type="date" id="fr-date-fin">
+          </div>
+          <button class="btn btn-outline btn-sm" id="fr-btn-filtrer">Filtrer</button>
+          <button class="btn btn-ghost btn-sm" id="fr-btn-reset">Réinitialiser</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Horaire</th><th>Machine</th><th>Panne</th><th>Statut panne</th><th>Statut rapport</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="reports-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MES COMMANDES ================= -->
+    <section class="tab-panel" id="panel-mes-commandes">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div><h3>Mes commandes</h3><p>Historique de vos demandes de pièces et consommables.</p></div>
+        </div>
+        <div class="filter-bar">
+          <div class="field">
+            <label>Statut</label>
+            <select id="fo-statut">
+              <option value="">Tous</option>
+              <option value="En attente">En attente</option>
+              <option value="Validée">Validée</option>
+              <option value="Rejetée">Rejetée</option>
+              <option value="Livrée">Livrée</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Urgence</label>
+            <select id="fo-urgence">
+              <option value="">Toutes</option>
+              <option value="Normale">Normale</option>
+              <option value="Urgente">Urgente</option>
+              <option value="Critique">Critique</option>
+            </select>
+          </div>
+          <button class="btn btn-outline btn-sm" id="fo-btn-filtrer">Filtrer</button>
+          <button class="btn btn-ghost btn-sm" id="fo-btn-reset">Réinitialiser</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Désignation</th><th>Qté</th><th>Urgence</th><th>Statut</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast-region"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-card" id="modal-card"></div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
