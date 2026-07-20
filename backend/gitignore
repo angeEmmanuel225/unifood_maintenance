@@ -1,0 +1,18 @@
+# Dépendances (réinstallées automatiquement par "npm install" / par Render)
+backend/node_modules/
+node_modules/
+
+# Variables d'environnement (contient des secrets — ne jamais pousser sur GitHub)
+backend/.env
+.env
+
+# Identifiants générés (mots de passe en clair — ne jamais pousser sur GitHub)
+backend/identifiants_generes.csv
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+*.log
