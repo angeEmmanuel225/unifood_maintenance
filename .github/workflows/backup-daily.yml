@@ -23,9 +23,9 @@ jobs:
 
       - name: Lancer la sauvegarde vers Google Drive
         env:
-          MONGO_URI: ${{mongodb+srv://unifood_admin:UNIFOOD1234@cluster0.r9wqbtf.mongodb.net/unifood_maintenance?retryWrites=true&w=majority }}
-          GOOGLE_CLIENT_ID: ${{305204329498-mkmvp8t6vs09lchoa1r57atkptklfe9j.apps.googleusercontent.com }}
-          GOOGLE_CLIENT_SECRET: ${{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 }}
-          GOOGLE_REFRESH_TOKEN: ${{1//09xJdlZnT822nCgYIARAAGAkSNwF-L9Ire26PsNob64sDogXv9QVyOtImOBbVVuasVuoPMCor4JdU58pOK7Vy_nLmf5KUfdlUoE8 }}
-          GDRIVE_FOLDER_ID: ${{1JXHf749xed-1yJUhijjElcxK-m5hELJV }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
         run: npm run backup
