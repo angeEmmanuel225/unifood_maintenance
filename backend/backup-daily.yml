@@ -1,0 +1,31 @@
+name: Sauvegarde quotidienne de la base de données
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # tous les jours à 03h00 UTC (~4h/5h du matin au Togo)
+  workflow_dispatch: # permet de lancer la sauvegarde manuellement depuis l'onglet Actions, pour tester
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backup
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances
+        run: npm install
+
+      - name: Lancer la sauvegarde vers Google Drive
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: npm run backup
