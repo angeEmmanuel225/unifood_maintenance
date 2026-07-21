@@ -1,0 +1,15 @@
+{
+  "name": "unifood-backup",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sauvegarde quotidienne de la base MongoDB UNIFOOD TOGO vers Google Drive",
+  "scripts": {
+    "backup": "node backup.js",
+    "get-token": "node get_refresh_token.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "googleapis": "^140.0.1",
+    "mongodb": "^6.8.0"
+  }
+}
