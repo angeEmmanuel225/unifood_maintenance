@@ -84,11 +84,11 @@ async function cleanOldBackups(drive) {
 }
 
 async function run() {
-  required('MONGO_URI', MONGO_URI);
-  required('GOOGLE_CLIENT_ID', CLIENT_ID);
-  required('GOOGLE_CLIENT_SECRET', CLIENT_SECRET);
-  required('GOOGLE_REFRESH_TOKEN', REFRESH_TOKEN);
-  required('GDRIVE_FOLDER_ID', FOLDER_ID);
+  required('mongodb+srv://unifood_admin:UNIFOOD1234@cluster0.r9wqbtf.mongodb.net/unifood_maintenance?retryWrites=true&w=majority', MONGO_URI);
+  required('305204329498-mkmvp8t6vs09lchoa1r57atkptklfe9j.apps.googleusercontent.com', CLIENT_ID);
+  required('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', CLIENT_SECRET);
+  required('1//09xJdlZnT822nCgYIARAAGAkSNwF-L9Ire26PsNob64sDogXv9QVyOtImOBbVVuasVuoPMCor4JdU58pOK7Vy_nLmf5KUfdlUoE8', REFRESH_TOKEN);
+  required('1JXHf749xed-1yJUhijjElcxK-m5hELJV', FOLDER_ID);
 
   console.log('Connexion à MongoDB et export des données...');
   const dump = await dumpDatabase();

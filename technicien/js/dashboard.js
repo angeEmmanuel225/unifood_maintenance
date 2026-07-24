@@ -194,7 +194,7 @@
         showToast(data.message || "Erreur lors de l'enregistrement.", 'error');
         return;
       }
-      showToast('Rapport enregistré avec succès.');
+      showToast('Panne ajoutée à la fiche du jour.');
       reportForm.reset();
       document.getElementById('r-date').value = new Date().toISOString().slice(0, 10);
       const match = departments.find((d) => d.nom === auth.user.departement);
@@ -242,7 +242,7 @@
         showToast(data.message || "Erreur lors de l'envoi.", 'error');
         return;
       }
-      showToast('Commande envoyée au responsable.');
+      showToast('Article ajouté à la commande du jour.');
       orderForm.reset();
       const match = departments.find((d) => d.nom === auth.user.departement);
       if (match) document.getElementById('o-departement').value = match.nom;
@@ -259,7 +259,7 @@
   // ---------- reports table ----------
   async function loadReports() {
     const tbody = document.getElementById('reports-tbody');
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><span class="spinner dark"></span></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><span class="spinner dark"></span></div></td></tr>`;
 
     const params = new URLSearchParams();
     const statutPanne = document.getElementById('fr-statut-panne').value;
@@ -273,23 +273,22 @@
     const reports = await res.json();
 
     if (!reports.length) {
-      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">${icon('fileText', 34)}<p>Aucun rapport pour ces filtres.</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">${icon('fileText', 34)}<p>Aucun rapport pour ces filtres.</p></div></td></tr>`;
       return;
     }
 
     tbody.innerHTML = reports
-      .map(
-        (r) => `
+      .map((r) => {
+        const machines = r.entries.map((e) => e.machineConcernee).join(', ');
+        return `
       <tr>
         <td class="cell-mono">${formatDateFR(r.dateRapport)}</td>
         <td>${escapeHtml(r.horaire)}</td>
-        <td>${escapeHtml(r.machineConcernee)}</td>
-        <td class="cell-muted">${escapeHtml(truncate(r.descriptionPanne, 36))}</td>
-        <td><span class="stamp ${stampClass(r.statutPanne)}">${escapeHtml(r.statutPanne)}</span></td>
+        <td class="cell-muted">${r.entries.length} panne(s) — ${escapeHtml(truncate(machines, 40))}</td>
         <td><span class="stamp ${stampClass(r.statutRapport)}">${escapeHtml(r.statutRapport)}</span></td>
         <td><button class="btn btn-ghost btn-sm view-report" data-id="${r._id}">${icon('eye', 15)}</button></td>
-      </tr>`
-      )
+      </tr>`;
+      })
       .join('');
 
     tbody.querySelectorAll('.view-report').forEach((b) =>
@@ -298,22 +297,31 @@
   }
 
   function showReportModal(r) {
+    const entriesHtml = r.entries
+      .map(
+        (e, i) => `
+      <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">
+          <strong style="color:var(--praline); font-size:0.9rem;">Panne ${i + 1} — ${escapeHtml(e.machineConcernee)}</strong>
+          <span class="stamp ${stampClass(e.statutPanne)}">${escapeHtml(e.statutPanne)}</span>
+        </div>
+        <p class="cell-muted" style="margin-top:4px;">Heure de début : ${escapeHtml(e.heureDebut)} — Heure de fin : ${escapeHtml(e.heureFin)}</p>
+        <div class="detail-grid" style="margin-top:8px;">
+          <div class="detail-item full"><label>Description de la panne</label><p>${escapeHtml(e.descriptionPanne)}</p></div>
+          <div class="detail-item full"><label>Action menée</label><p>${escapeHtml(e.actionMenee)}</p></div>
+          ${e.observations ? `<div class="detail-item full"><label>Observations</label><p>${escapeHtml(e.observations)}</p></div>` : ''}
+        </div>
+      </div>`
+      )
+      .join('');
+
     openModal(`
       <button class="modal-close" id="modal-close">${icon('x', 16)}</button>
-      <span class="stamp ${stampClass(r.statutPanne)}">${escapeHtml(r.statutPanne)}</span>
-      <h2 style="margin-top:14px;">${escapeHtml(r.machineConcernee)}</h2>
-      <p style="color:var(--gray); font-size:0.85rem; margin-top:4px;">${formatDateFR(r.dateRapport)} · ${escapeHtml(r.horaire)}</p>
-      <div class="detail-grid">
-        <div class="detail-item"><label>Département</label><p>${escapeHtml(r.departement)}</p></div>
-        <div class="detail-item"><label>Responsable</label><p>${escapeHtml(r.responsableDepartement)}</p></div>
-        <div class="detail-item"><label>Heure de début</label><p>${escapeHtml(r.heureDebut)}</p></div>
-        <div class="detail-item"><label>Heure de fin</label><p>${escapeHtml(r.heureFin)}</p></div>
-        <div class="detail-item full"><label>Description de la panne</label><p>${escapeHtml(r.descriptionPanne)}</p></div>
-        <div class="detail-item full"><label>Action menée</label><p>${escapeHtml(r.actionMenee)}</p></div>
-        ${r.observations ? `<div class="detail-item full"><label>Observations</label><p>${escapeHtml(r.observations)}</p></div>` : ''}
-        <div class="detail-item"><label>Statut du rapport</label><p><span class="stamp ${stampClass(r.statutRapport)}">${escapeHtml(r.statutRapport)}</span></p></div>
-      </div>
-      <div class="form-actions">
+      <span class="stamp ${stampClass(r.statutRapport)}">${escapeHtml(r.statutRapport)}</span>
+      <h2 style="margin-top:14px;">Fiche du ${formatDateFR(r.dateRapport)}</h2>
+      <p style="color:var(--gray); font-size:0.85rem; margin-top:4px;">${escapeHtml(r.horaire)} · ${escapeHtml(r.departement)} · ${r.entries.length} panne(s) déclarée(s)</p>
+      ${entriesHtml}
+      <div class="form-actions" style="margin-top:18px;">
         <button class="btn btn-outline" id="modal-pdf">${icon('download', 15)} Télécharger le PDF</button>
       </div>
     `);
@@ -332,7 +340,7 @@
   // ---------- orders table ----------
   async function loadOrders() {
     const tbody = document.getElementById('orders-tbody');
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="spinner dark"></span></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><span class="spinner dark"></span></div></td></tr>`;
 
     const params = new URLSearchParams();
     const statutCommande = document.getElementById('fo-statut').value;
@@ -344,22 +352,20 @@
     const orders = await res.json();
 
     if (!orders.length) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">${icon('cart', 34)}<p>Aucune commande pour ces filtres.</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state">${icon('cart', 34)}<p>Aucune commande pour ces filtres.</p></div></td></tr>`;
       return;
     }
 
     tbody.innerHTML = orders
-      .map(
-        (o) => `
+      .map((o) => {
+        const designations = o.items.map((it) => it.designation).join(', ');
+        return `
       <tr>
-        <td class="cell-mono">${formatDateFR(o.createdAt)}</td>
-        <td>${escapeHtml(o.designation)}</td>
-        <td class="cell-mono">${o.quantite} ${escapeHtml(o.unite)}</td>
-        <td><span class="stamp ${stampClass(o.urgence)}">${escapeHtml(o.urgence)}</span></td>
-        <td><span class="stamp ${stampClass(o.statutCommande)}">${escapeHtml(o.statutCommande)}</span></td>
+        <td class="cell-mono">${formatDateFR(o.dateCommande)}</td>
+        <td class="cell-muted">${o.items.length} article(s) — ${escapeHtml(truncate(designations, 40))}</td>
         <td><button class="btn btn-ghost btn-sm view-order" data-id="${o._id}">${icon('eye', 15)}</button></td>
-      </tr>`
-      )
+      </tr>`;
+      })
       .join('');
 
     tbody.querySelectorAll('.view-order').forEach((b) =>
@@ -368,20 +374,32 @@
   }
 
   function showOrderModal(o) {
+    const itemsHtml = o.items
+      .map(
+        (it, i) => `
+      <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">
+          <strong style="color:var(--praline); font-size:0.9rem;">Article ${i + 1} — ${escapeHtml(it.designation)}</strong>
+          <span class="stamp ${stampClass(it.urgence)}">${escapeHtml(it.urgence)}</span>
+        </div>
+        <div class="detail-grid" style="margin-top:8px;">
+          <div class="detail-item"><label>Quantité</label><p>${it.quantite} ${escapeHtml(it.unite)}</p></div>
+          <div class="detail-item"><label>Référence</label><p>${escapeHtml(it.reference) || '-'}</p></div>
+          <div class="detail-item"><label>Date souhaitée</label><p>${it.dateSouhaitee ? formatDateFR(it.dateSouhaitee) : 'Non précisée'}</p></div>
+          <div class="detail-item"><label>Statut</label><p><span class="stamp ${stampClass(it.statutCommande)}">${escapeHtml(it.statutCommande)}</span></p></div>
+          <div class="detail-item full"><label>Motif / justification</label><p>${escapeHtml(it.motif)}</p></div>
+          ${it.noteResponsable ? `<div class="detail-item full"><label>Note du responsable</label><p>${escapeHtml(it.noteResponsable)}</p></div>` : ''}
+        </div>
+      </div>`
+      )
+      .join('');
+
     openModal(`
       <button class="modal-close" id="modal-close">${icon('x', 16)}</button>
-      <span class="stamp ${stampClass(o.urgence)}">${escapeHtml(o.urgence)}</span>
-      <h2 style="margin-top:14px;">${escapeHtml(o.designation)}</h2>
-      <p style="color:var(--gray); font-size:0.85rem; margin-top:4px;">${formatDateFR(o.createdAt)} · ${escapeHtml(o.departement)}</p>
-      <div class="detail-grid">
-        <div class="detail-item"><label>Quantité</label><p>${o.quantite} ${escapeHtml(o.unite)}</p></div>
-        <div class="detail-item"><label>Référence</label><p>${escapeHtml(o.reference) || '-'}</p></div>
-        <div class="detail-item"><label>Date souhaitée</label><p>${o.dateSouhaitee ? formatDateFR(o.dateSouhaitee) : 'Non précisée'}</p></div>
-        <div class="detail-item"><label>Statut</label><p><span class="stamp ${stampClass(o.statutCommande)}">${escapeHtml(o.statutCommande)}</span></p></div>
-        <div class="detail-item full"><label>Motif / justification</label><p>${escapeHtml(o.motif)}</p></div>
-        ${o.noteResponsable ? `<div class="detail-item full"><label>Note du responsable</label><p>${escapeHtml(o.noteResponsable)}</p></div>` : ''}
-      </div>
-      <div class="form-actions">
+      <h2 style="margin-top:14px;">Commande du ${formatDateFR(o.dateCommande)}</h2>
+      <p style="color:var(--gray); font-size:0.85rem; margin-top:4px;">${escapeHtml(o.departement)} · ${o.items.length} article(s)</p>
+      ${itemsHtml}
+      <div class="form-actions" style="margin-top:18px;">
         <button class="btn btn-outline" id="modal-pdf">${icon('download', 15)} PDF</button>
       </div>
     `);

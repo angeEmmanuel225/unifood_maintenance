@@ -97,6 +97,12 @@
     if (e.target.id === 'modal-overlay') closeModal();
   });
 
+  function exportBadge(exporte) {
+    return exporte
+      ? `<span class="stamp mint">${icon('check', 12)} Oui</span>`
+      : `<span class="stamp steel">Non</span>`;
+  }
+
   // ---------- static icons ----------
   document.getElementById('logout-btn').innerHTML = icon('logout', 17);
   document.getElementById('tab-rapports').innerHTML = icon('fileText', 15) + ' Rapports reçus';
@@ -107,6 +113,8 @@
   document.getElementById('ic-stat-4').innerHTML = icon('alert', 20);
   document.getElementById('btn-export-reports-pdf').innerHTML = icon('download', 15) + ' Exporter tout (PDF)';
   document.getElementById('btn-export-orders-excel').innerHTML = icon('download', 15) + ' Exporter tout (Excel)';
+  document.getElementById('btn-delete-reports-bulk').innerHTML = icon('x', 15) + ' Supprimer la sélection';
+  document.getElementById('btn-delete-orders-bulk').innerHTML = icon('x', 15) + ' Supprimer la sélection';
 
   // ---------- user info ----------
   document.getElementById('user-name').textContent = `${auth.user.prenom} ${auth.user.nom}`;
@@ -180,15 +188,15 @@
     }
 
     tbody.innerHTML = reports
-      .map(
-        (r) => `
+      .map((r) => {
+        const machines = r.entries.map((e) => e.machineConcernee).join(', ');
+        return `
       <tr>
         <td class="cell-mono">${formatDateFR(r.dateRapport)}</td>
         <td>${escapeHtml(r.technicienNom)}</td>
         <td>${escapeHtml(r.departement)}</td>
         <td>${escapeHtml(r.horaire)}</td>
-        <td>${escapeHtml(r.machineConcernee)}</td>
-        <td><span class="stamp ${stampClass(r.statutPanne)}">${escapeHtml(r.statutPanne)}</span></td>
+        <td class="cell-muted">${r.entries.length} panne(s) — ${escapeHtml(truncate(machines, 32))}</td>
         <td>
           <select class="statut-rapport-select" data-id="${r._id}" style="padding:5px 8px; font-size:0.78rem;">
             <option value="Nouveau" ${r.statutRapport === 'Nouveau' ? 'selected' : ''}>Nouveau</option>
@@ -196,24 +204,29 @@
             <option value="Traité" ${r.statutRapport === 'Traité' ? 'selected' : ''}>Traité</option>
           </select>
         </td>
+        <td>${exportBadge(r.exporte)}</td>
         <td style="white-space:nowrap;">
           <button class="btn btn-ghost btn-sm view-report" data-id="${r._id}" title="Voir">${icon('eye', 15)}</button>
           <button class="btn btn-ghost btn-sm dl-report-pdf" data-id="${r._id}" title="PDF">${icon('download', 15)}</button>
+          <button class="btn btn-ghost btn-sm del-report" data-id="${r._id}" title="Supprimer" style="color:var(--raspberry);">${icon('x', 15)}</button>
         </td>
-      </tr>`
-      )
+      </tr>`;
+      })
       .join('');
 
     tbody.querySelectorAll('.view-report').forEach((b) =>
       b.addEventListener('click', () => showReportModal(reports.find((r) => r._id === b.dataset.id)))
     );
     tbody.querySelectorAll('.dl-report-pdf').forEach((b) =>
-      b.addEventListener('click', () => downloadFile(`/reports/${b.dataset.id}/pdf`, `rapport-${b.dataset.id}.pdf`))
+      b.addEventListener('click', () => downloadFile(`/reports/${b.dataset.id}/pdf`, `rapport-${b.dataset.id}.pdf`).then(loadReports))
     );
     tbody.querySelectorAll('.statut-rapport-select').forEach((sel) =>
       sel.addEventListener('change', async () => {
         await updateReportStatus(sel.dataset.id, { statutRapport: sel.value });
       })
+    );
+    tbody.querySelectorAll('.del-report').forEach((b) =>
+      b.addEventListener('click', () => deleteReport(b.dataset.id))
     );
   }
 
@@ -232,20 +245,47 @@
     }
   }
 
+  async function deleteReport(id) {
+    if (!confirm('Supprimer définitivement cette fiche de rapport ? Cette action est irréversible.')) return;
+    const res = await authFetch(`/reports/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Fiche supprimée.');
+      closeModal();
+      loadReports();
+      loadStats();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.message || 'Erreur lors de la suppression.', 'error');
+    }
+  }
+
   function showReportModal(r) {
+    const entriesHtml = r.entries
+      .map(
+        (e, i) => `
+      <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">
+          <strong style="color:var(--praline); font-size:0.9rem;">Panne ${i + 1} — ${escapeHtml(e.machineConcernee)}</strong>
+          <span class="stamp ${stampClass(e.statutPanne)}">${escapeHtml(e.statutPanne)}</span>
+        </div>
+        <p class="cell-muted" style="margin-top:4px;">Heure de début : ${escapeHtml(e.heureDebut)} — Heure de fin : ${escapeHtml(e.heureFin)}</p>
+        <div class="detail-grid" style="margin-top:8px;">
+          <div class="detail-item full"><label>Description de la panne</label><p>${escapeHtml(e.descriptionPanne)}</p></div>
+          <div class="detail-item full"><label>Action menée</label><p>${escapeHtml(e.actionMenee)}</p></div>
+          ${e.observations ? `<div class="detail-item full"><label>Observations</label><p>${escapeHtml(e.observations)}</p></div>` : ''}
+        </div>
+      </div>`
+      )
+      .join('');
+
     openModal(`
       <button class="modal-close" id="modal-close">${icon('x', 16)}</button>
-      <span class="stamp ${stampClass(r.statutPanne)}">${escapeHtml(r.statutPanne)}</span>
-      <h2 style="margin-top:14px;">${escapeHtml(r.machineConcernee)}</h2>
-      <p style="color:var(--gray); font-size:0.85rem; margin-top:4px;">${formatDateFR(r.dateRapport)} · ${escapeHtml(r.horaire)} · ${escapeHtml(r.technicienNom)}</p>
-      <div class="detail-grid">
-        <div class="detail-item"><label>Département</label><p>${escapeHtml(r.departement)}</p></div>
-        <div class="detail-item"><label>Responsable</label><p>${escapeHtml(r.responsableDepartement)}</p></div>
-        <div class="detail-item"><label>Heure de début</label><p>${escapeHtml(r.heureDebut)}</p></div>
-        <div class="detail-item"><label>Heure de fin</label><p>${escapeHtml(r.heureFin)}</p></div>
-        <div class="detail-item full"><label>Description de la panne</label><p>${escapeHtml(r.descriptionPanne)}</p></div>
-        <div class="detail-item full"><label>Action menée</label><p>${escapeHtml(r.actionMenee)}</p></div>
-        ${r.observations ? `<div class="detail-item full"><label>Observations</label><p>${escapeHtml(r.observations)}</p></div>` : ''}
+      <span class="stamp ${stampClass(r.statutRapport)}">${escapeHtml(r.statutRapport)}</span>
+      ${exportBadge(r.exporte)}
+      <h2 style="margin-top:14px;">Fiche du ${formatDateFR(r.dateRapport)}</h2>
+      <p style="color:var(--gray); font-size:0.85rem; margin-top:4px;">${escapeHtml(r.technicienNom)} · ${escapeHtml(r.departement)} · ${escapeHtml(r.horaire)} · ${r.entries.length} panne(s)</p>
+      <div class="detail-grid" style="margin-top:14px;">
+        <div class="detail-item"><label>Responsable de département</label><p>${escapeHtml(r.responsableDepartement)}</p></div>
         <div class="detail-item full">
           <label>Statut du rapport</label>
           <select id="modal-statut-rapport">
@@ -255,13 +295,16 @@
           </select>
         </div>
       </div>
-      <div class="form-actions">
+      ${entriesHtml}
+      <div class="form-actions" style="flex-wrap:wrap; margin-top:18px;">
+        <button class="btn btn-outline" id="modal-delete" style="color:var(--raspberry); border-color:var(--raspberry);">${icon('x', 15)} Supprimer</button>
         <button class="btn btn-outline" id="modal-pdf">${icon('download', 15)} Télécharger le PDF</button>
         <button class="btn btn-primary" id="modal-save" style="width:auto;">${icon('check', 15)} Enregistrer</button>
       </div>
     `);
     document.getElementById('modal-close').addEventListener('click', closeModal);
     document.getElementById('modal-pdf').addEventListener('click', () => downloadFile(`/reports/${r._id}/pdf`, `rapport-${r._id}.pdf`));
+    document.getElementById('modal-delete').addEventListener('click', () => deleteReport(r._id));
     document.getElementById('modal-save').addEventListener('click', async () => {
       const statutRapport = document.getElementById('modal-statut-rapport').value;
       await updateReportStatus(r._id, { statutRapport });
@@ -281,8 +324,26 @@
     loadReports();
   });
   document.getElementById('btn-export-reports-pdf').addEventListener('click', () =>
-    downloadFile(`/reports/export/pdf?${reportFilterParams().toString()}`, `rapports-unifood-${Date.now()}.pdf`)
+    downloadFile(`/reports/export/pdf?${reportFilterParams().toString()}`, `rapports-unifood-${Date.now()}.pdf`).then(loadReports)
   );
+  document.getElementById('btn-delete-reports-bulk').addEventListener('click', async () => {
+    const dateDebut = document.getElementById('fr-date-debut').value;
+    const dateFin = document.getElementById('fr-date-fin').value;
+    if (!dateDebut && !dateFin) {
+      showToast('Précise au moins une date (Du / Au) avant de supprimer en masse.', 'error');
+      return;
+    }
+    if (!confirm('Supprimer TOUTES les fiches correspondant aux filtres actuels ? Cette action est irréversible.')) return;
+    const res = await authFetch(`/reports/bulk?${reportFilterParams().toString()}`, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      showToast(data.message || 'Suppression groupée effectuée.');
+      loadReports();
+      loadStats();
+    } else {
+      showToast(data.message || 'Erreur lors de la suppression groupée.', 'error');
+    }
+  });
 
   // ================= COMMANDES =================
   function orderFilterParams() {
@@ -304,110 +365,142 @@
 
   async function loadOrders() {
     const tbody = document.getElementById('orders-tbody');
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><span class="spinner dark"></span></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="spinner dark"></span></div></td></tr>`;
 
     const res = await authFetch(`/orders?${orderFilterParams().toString()}`);
     const orders = await res.json();
 
     if (!orders.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">${icon('cart', 34)}<p>Aucune commande pour ces filtres.</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">${icon('cart', 34)}<p>Aucune commande pour ces filtres.</p></div></td></tr>`;
       return;
     }
 
     tbody.innerHTML = orders
-      .map(
-        (o) => `
+      .map((o) => {
+        const designations = o.items.map((it) => it.designation).join(', ');
+        return `
       <tr>
-        <td class="cell-mono">${formatDateFR(o.createdAt)}</td>
+        <td class="cell-mono">${formatDateFR(o.dateCommande)}</td>
         <td>${escapeHtml(o.technicienNom)}</td>
         <td>${escapeHtml(o.departement)}</td>
-        <td>${escapeHtml(o.designation)}</td>
-        <td class="cell-mono">${o.quantite} ${escapeHtml(o.unite)}</td>
-        <td><span class="stamp ${stampClass(o.urgence)}">${escapeHtml(o.urgence)}</span></td>
-        <td>
-          <select class="statut-commande-select" data-id="${o._id}" style="padding:5px 8px; font-size:0.78rem;">
-            <option value="En attente" ${o.statutCommande === 'En attente' ? 'selected' : ''}>En attente</option>
-            <option value="Validée" ${o.statutCommande === 'Validée' ? 'selected' : ''}>Validée</option>
-            <option value="Rejetée" ${o.statutCommande === 'Rejetée' ? 'selected' : ''}>Rejetée</option>
-            <option value="Livrée" ${o.statutCommande === 'Livrée' ? 'selected' : ''}>Livrée</option>
-          </select>
-        </td>
+        <td class="cell-muted">${o.items.length} article(s) — ${escapeHtml(truncate(designations, 32))}</td>
+        <td>${exportBadge(o.exporte)}</td>
         <td style="white-space:nowrap;">
           <button class="btn btn-ghost btn-sm view-order" data-id="${o._id}" title="Voir">${icon('eye', 15)}</button>
           <button class="btn btn-ghost btn-sm dl-order-pdf" data-id="${o._id}" title="PDF">${icon('download', 15)}</button>
+          <button class="btn btn-ghost btn-sm del-order" data-id="${o._id}" title="Supprimer" style="color:var(--raspberry);">${icon('x', 15)}</button>
         </td>
-      </tr>`
-      )
+      </tr>`;
+      })
       .join('');
 
     tbody.querySelectorAll('.view-order').forEach((b) =>
       b.addEventListener('click', () => showOrderModal(orders.find((o) => o._id === b.dataset.id)))
     );
     tbody.querySelectorAll('.dl-order-pdf').forEach((b) =>
-      b.addEventListener('click', () => downloadFile(`/orders/${b.dataset.id}/pdf`, `commande-${b.dataset.id}.pdf`))
+      b.addEventListener('click', () => downloadFile(`/orders/${b.dataset.id}/pdf`, `commande-${b.dataset.id}.pdf`).then(loadOrders))
     );
-    tbody.querySelectorAll('.statut-commande-select').forEach((sel) =>
-      sel.addEventListener('change', async () => {
-        await updateOrderStatus(sel.dataset.id, { statutCommande: sel.value });
-      })
+    tbody.querySelectorAll('.del-order').forEach((b) =>
+      b.addEventListener('click', () => deleteOrder(b.dataset.id))
     );
   }
 
-  async function updateOrderStatus(id, body) {
-    const res = await authFetch(`/orders/${id}/statut`, {
+  async function updateOrderItemStatus(orderId, itemId, body) {
+    const res = await authFetch(`/orders/${orderId}/items/${itemId}/statut`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.message || 'Erreur lors de la mise à jour.', 'error');
+      return false;
+    }
+    return true;
+  }
+
+  async function deleteOrder(id) {
+    if (!confirm('Supprimer définitivement cette fiche de commande ? Cette action est irréversible.')) return;
+    const res = await authFetch(`/orders/${id}`, { method: 'DELETE' });
     if (res.ok) {
-      showToast('Statut de la commande mis à jour.');
+      showToast('Fiche supprimée.');
+      closeModal();
+      loadOrders();
       loadStats();
     } else {
       const data = await res.json().catch(() => ({}));
-      showToast(data.message || 'Erreur lors de la mise à jour.', 'error');
+      showToast(data.message || 'Erreur lors de la suppression.', 'error');
     }
   }
 
   function showOrderModal(o) {
+    const itemsHtml = o.items
+      .map(
+        (it, i) => `
+      <div class="order-item-block" data-item-id="${it._id}" style="border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">
+          <strong style="color:var(--praline); font-size:0.9rem;">Article ${i + 1} — ${escapeHtml(it.designation)}</strong>
+          <span class="stamp ${stampClass(it.urgence)}">${escapeHtml(it.urgence)}</span>
+        </div>
+        <div class="detail-grid" style="margin-top:8px;">
+          <div class="detail-item"><label>Quantité</label><p>${it.quantite} ${escapeHtml(it.unite)}</p></div>
+          <div class="detail-item"><label>Référence</label><p>${escapeHtml(it.reference) || '-'}</p></div>
+          <div class="detail-item"><label>Date souhaitée</label><p>${it.dateSouhaitee ? formatDateFR(it.dateSouhaitee) : 'Non précisée'}</p></div>
+          <div class="detail-item">
+            <label>Statut</label>
+            <select class="item-statut-select">
+              <option value="En attente" ${it.statutCommande === 'En attente' ? 'selected' : ''}>En attente</option>
+              <option value="Validée" ${it.statutCommande === 'Validée' ? 'selected' : ''}>Validée</option>
+              <option value="Rejetée" ${it.statutCommande === 'Rejetée' ? 'selected' : ''}>Rejetée</option>
+              <option value="Livrée" ${it.statutCommande === 'Livrée' ? 'selected' : ''}>Livrée</option>
+            </select>
+          </div>
+          <div class="detail-item full"><label>Motif / justification</label><p>${escapeHtml(it.motif)}</p></div>
+          <div class="detail-item full">
+            <label>Note du responsable <small class="hint">(optionnel)</small></label>
+            <textarea class="item-note-responsable" placeholder="Ajoutez une note pour le technicien...">${escapeHtml(it.noteResponsable || '')}</textarea>
+          </div>
+        </div>
+      </div>`
+      )
+      .join('');
+
     openModal(`
       <button class="modal-close" id="modal-close">${icon('x', 16)}</button>
-      <span class="stamp ${stampClass(o.urgence)}">${escapeHtml(o.urgence)}</span>
-      <h2 style="margin-top:14px;">${escapeHtml(o.designation)}</h2>
-      <p style="color:var(--gray); font-size:0.85rem; margin-top:4px;">${formatDateFR(o.createdAt)} · ${escapeHtml(o.departement)} · ${escapeHtml(o.technicienNom)}</p>
-      <div class="detail-grid">
-        <div class="detail-item"><label>Quantité</label><p>${o.quantite} ${escapeHtml(o.unite)}</p></div>
-        <div class="detail-item"><label>Référence</label><p>${escapeHtml(o.reference) || '-'}</p></div>
-        <div class="detail-item"><label>Date souhaitée</label><p>${o.dateSouhaitee ? formatDateFR(o.dateSouhaitee) : 'Non précisée'}</p></div>
-        <div class="detail-item">
-          <label>Statut</label>
-          <select id="modal-statut-commande">
-            <option value="En attente" ${o.statutCommande === 'En attente' ? 'selected' : ''}>En attente</option>
-            <option value="Validée" ${o.statutCommande === 'Validée' ? 'selected' : ''}>Validée</option>
-            <option value="Rejetée" ${o.statutCommande === 'Rejetée' ? 'selected' : ''}>Rejetée</option>
-            <option value="Livrée" ${o.statutCommande === 'Livrée' ? 'selected' : ''}>Livrée</option>
-          </select>
-        </div>
-        <div class="detail-item full"><label>Motif / justification</label><p>${escapeHtml(o.motif)}</p></div>
-        <div class="detail-item full">
-          <label>Note du responsable <small class="hint">(optionnel)</small></label>
-          <textarea id="modal-note-responsable" placeholder="Ajoutez une note pour le technicien...">${escapeHtml(o.noteResponsable || '')}</textarea>
-        </div>
-      </div>
-      <div class="form-actions" style="flex-wrap:wrap;">
+      ${exportBadge(o.exporte)}
+      <h2 style="margin-top:14px;">Commande du ${formatDateFR(o.dateCommande)}</h2>
+      <p style="color:var(--gray); font-size:0.85rem; margin-top:4px;">${escapeHtml(o.technicienNom)} · ${escapeHtml(o.departement)} · ${o.items.length} article(s)</p>
+      ${itemsHtml}
+      <div class="form-actions" style="flex-wrap:wrap; margin-top:18px;">
+        <button class="btn btn-outline" id="modal-delete" style="color:var(--raspberry); border-color:var(--raspberry);">${icon('x', 15)} Supprimer</button>
         <button class="btn btn-outline" id="modal-pdf">${icon('download', 15)} PDF</button>
         <button class="btn btn-outline" id="modal-word">${icon('download', 15)} Word</button>
         <button class="btn btn-outline" id="modal-excel">${icon('download', 15)} Excel</button>
-        <button class="btn btn-primary" id="modal-save" style="width:auto;">${icon('check', 15)} Enregistrer</button>
+        <button class="btn btn-primary" id="modal-save" style="width:auto;">${icon('check', 15)} Enregistrer tout</button>
       </div>
     `);
     document.getElementById('modal-close').addEventListener('click', closeModal);
     document.getElementById('modal-pdf').addEventListener('click', () => downloadFile(`/orders/${o._id}/pdf`, `commande-${o._id}.pdf`));
     document.getElementById('modal-word').addEventListener('click', () => downloadFile(`/orders/${o._id}/word`, `commande-${o._id}.docx`));
     document.getElementById('modal-excel').addEventListener('click', () => downloadFile(`/orders/${o._id}/excel`, `commande-${o._id}.xlsx`));
-    document.getElementById('modal-save').addEventListener('click', async () => {
-      const statutCommande = document.getElementById('modal-statut-commande').value;
-      const noteResponsable = document.getElementById('modal-note-responsable').value;
-      await updateOrderStatus(o._id, { statutCommande, noteResponsable });
+    document.getElementById('modal-delete').addEventListener('click', () => deleteOrder(o._id));
+    document.getElementById('modal-save').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      const blocks = document.querySelectorAll('.order-item-block');
+      let allOk = true;
+      for (const block of blocks) {
+        const itemId = block.dataset.itemId;
+        const statutCommande = block.querySelector('.item-statut-select').value;
+        const noteResponsable = block.querySelector('.item-note-responsable').value;
+        const ok = await updateOrderItemStatus(o._id, itemId, { statutCommande, noteResponsable });
+        if (!ok) allOk = false;
+      }
+      btn.disabled = false;
+      if (allOk) {
+        showToast('Commande mise à jour.');
+        loadStats();
+      }
       closeModal();
       loadOrders();
     });
@@ -424,8 +517,26 @@
     loadOrders();
   });
   document.getElementById('btn-export-orders-excel').addEventListener('click', () =>
-    downloadFile(`/orders/export/excel?${orderFilterParams().toString()}`, `commandes-unifood-${Date.now()}.xlsx`)
+    downloadFile(`/orders/export/excel?${orderFilterParams().toString()}`, `commandes-unifood-${Date.now()}.xlsx`).then(loadOrders)
   );
+  document.getElementById('btn-delete-orders-bulk').addEventListener('click', async () => {
+    const dateDebut = document.getElementById('fo-date-debut').value;
+    const dateFin = document.getElementById('fo-date-fin').value;
+    if (!dateDebut && !dateFin) {
+      showToast('Précise au moins une date (Du / Au) avant de supprimer en masse.', 'error');
+      return;
+    }
+    if (!confirm('Supprimer TOUTES les commandes correspondant aux filtres actuels ? Cette action est irréversible.')) return;
+    const res = await authFetch(`/orders/bulk?${orderFilterParams().toString()}`, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      showToast(data.message || 'Suppression groupée effectuée.');
+      loadOrders();
+      loadStats();
+    } else {
+      showToast(data.message || 'Erreur lors de la suppression groupée.', 'error');
+    }
+  });
 
   // ---------- boot ----------
   async function boot() {

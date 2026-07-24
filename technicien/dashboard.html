@@ -75,7 +75,7 @@
         <div class="panel-head">
           <div>
             <h3>Nouveau rapport journalier</h3>
-            <p>Consignez la panne rencontrée, l'action menée et les horaires du shift.</p>
+            <p>Chaque panne ajoutée rejoint la fiche du jour — toutes tes pannes d'aujourd'hui seront envoyées groupées sur une seule fiche.</p>
           </div>
         </div>
         <form id="report-form" novalidate>
@@ -149,7 +149,7 @@
         <div class="panel-head">
           <div>
             <h3>Nouvelle commande</h3>
-            <p>Demandez une pièce ou un consommable nécessaire à votre intervention.</p>
+            <p>Chaque article ajouté rejoint ta commande du jour — tous tes articles d'aujourd'hui seront envoyés groupés sur une seule fiche.</p>
           </div>
         </div>
         <form id="order-form" novalidate>
@@ -210,7 +210,7 @@
     <section class="tab-panel" id="panel-mes-rapports">
       <div class="panel-card">
         <div class="panel-head">
-          <div><h3>Mes rapports</h3><p>Historique de vos rapports journaliers envoyés.</p></div>
+          <div><h3>Mes rapports</h3><p>Une fiche par jour, regroupant toutes les pannes déclarées ce jour-là.</p></div>
         </div>
         <div class="filter-bar">
           <div class="field">
@@ -237,7 +237,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th><th>Horaire</th><th>Machine</th><th>Panne</th><th>Statut panne</th><th>Statut rapport</th><th></th>
+                <th>Date</th><th>Horaire</th><th>Pannes déclarées</th><th>Statut rapport</th><th></th>
               </tr>
             </thead>
             <tbody id="reports-tbody"></tbody>
@@ -250,7 +250,7 @@
     <section class="tab-panel" id="panel-mes-commandes">
       <div class="panel-card">
         <div class="panel-head">
-          <div><h3>Mes commandes</h3><p>Historique de vos demandes de pièces et consommables.</p></div>
+          <div><h3>Mes commandes</h3><p>Une fiche par jour, regroupant tous les articles demandés ce jour-là.</p></div>
         </div>
         <div class="filter-bar">
           <div class="field">
@@ -279,7 +279,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th><th>Désignation</th><th>Qté</th><th>Urgence</th><th>Statut</th><th></th>
+                <th>Date</th><th>Articles commandés</th><th></th>
               </tr>
             </thead>
             <tbody id="orders-tbody"></tbody>

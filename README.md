@@ -120,17 +120,38 @@ unifood-app/
 
 ## 6. Fonctionnalités
 
+### Principe des fiches groupées (important)
+Un technicien peut déclarer **plusieurs pannes sur des machines différentes** au cours de la même journée : chaque nouvelle panne déclarée rejoint automatiquement **la même fiche du jour** au lieu de créer une fiche séparée. Le responsable reçoit donc une fiche par technicien par jour, listant toutes les pannes de la journée. Le même principe s'applique aux commandes (plusieurs articles → une seule fiche commande par jour et par technicien).
+
+> ⚠️ Si tu avais déjà des rapports/commandes en base créés avec l'ancienne version (une fiche par panne), lance une fois `node backend/migrate_to_grouped_sheets.js` après avoir mis à jour le code — voir section 6bis ci-dessous. Sans ça, les anciens documents ne s'afficheront pas correctement.
+
 ### Espace Technicien (`/technicien`)
 - Connexion sécurisée (email + mot de passe)
-- **Nouveau rapport journalier** : date, horaire (06h-14h / 14h-22h / 22h-06h / Journée 08h-16h), département, responsable de département, machine concernée, statut de la panne, heure de début/fin, description de la panne, action menée, observations
-- **Nouvelle commande** : désignation, référence, quantité, unité, urgence (Normale/Urgente/Critique), motif, date souhaitée
-- Historique personnel des rapports et commandes avec filtres et suivi de statut
-- Téléchargement PDF de ses propres rapports/commandes
+- **Nouveau rapport journalier** : chaque panne ajoutée (date, horaire, département, responsable de département, machine concernée, statut de la panne, heure de début/fin, description, action menée, observations) rejoint la fiche du jour
+- **Nouvelle commande** : chaque article ajouté (désignation, référence, quantité, unité, urgence, motif, date souhaitée) rejoint la commande du jour
+- **Mes rapports / Mes commandes** : une ligne par jour, avec le détail de toutes les pannes/articles de la journée accessible en cliquant sur "Voir"
+- Téléchargement PDF de ses propres fiches
 
 ### Espace Responsable (`/responsable`)
-- Tableau de bord avec indicateurs en temps réel (rapports du jour, pannes en cours, commandes en attente/urgentes)
-- **Rapports reçus** : filtrage par département/statut/dates/recherche, changement du statut (Nouveau → Lu → Traité), téléchargement PDF individuel, **export PDF groupé** de tous les rapports filtrés
-- **Commandes reçues** : filtrage par département/statut/urgence/dates/recherche, changement du statut (En attente → Validée/Rejetée/Livrée), ajout d'une note, téléchargement **PDF, Word (.docx) et Excel (.xlsx)** par commande, **export Excel groupé** de toutes les commandes filtrées
+- Tableau de bord avec indicateurs en temps réel
+- **Rapports reçus** : une fiche par technicien par jour ; le détail affiche chaque panne individuellement ; changement du statut de la fiche (Nouveau → Lu → Traité)
+- **Commandes reçues** : une fiche par technicien par jour ; chaque article a **son propre statut** (En attente/Validée/Rejetée/Livrée) et sa propre note, modifiables indépendamment dans la fenêtre de détail
+- **Badge "Exporté"** : indique en un coup d'œil si une fiche a déjà été téléchargée/exportée (PDF/Word/Excel), pour savoir lesquelles peuvent être nettoyées
+- **Suppression** : bouton de suppression par fiche, ou bouton "Supprimer la sélection" pour supprimer en masse toutes les fiches correspondant aux filtres actifs (nécessite qu'au moins une date "Du" ou "Au" soit renseignée, par sécurité)
+- **Export groupé** : "Exporter tout (PDF)" pour les rapports et "Exporter tout (Excel)" pour les commandes, sur toute une période (filtre de dates)
+
+## 6bis. Migration depuis l'ancienne version (une fiche par panne)
+
+Si ton backend tournait déjà avec l'ancienne version du code (avant les fiches groupées), fais ceci une seule fois après avoir mis à jour les fichiers :
+
+```bash
+cd backend
+node ../backup/backup.js   # optionnel mais recommandé : une sauvegarde fraîche avant migration
+node migrate_to_grouped_sheets.js
+```
+
+Ce script est sûr : il renomme tes anciennes collections en `reports_legacy_backup` / `orders_legacy_backup` (jamais supprimées) avant de créer les nouvelles fiches groupées. Si quelque chose te semble anormal après coup, tes données d'origine restent intactes dans ces collections de secours.
+
 
 ---
 
@@ -143,27 +164,42 @@ Toutes les routes (sauf `/api/auth/login`) nécessitent l'en-tête `Authorizatio
 | POST | `/api/auth/login` | — | Connexion |
 | GET | `/api/auth/me` | tous | Profil courant |
 | GET | `/api/departments` | tous | Liste des départements |
-| POST | `/api/reports` | technicien | Créer un rapport |
-| GET | `/api/reports` | tous | Lister les rapports (filtré par technicien si rôle technicien) |
-| GET | `/api/reports/:id` | tous | Détail d'un rapport |
-| GET | `/api/reports/:id/pdf` | tous | Télécharger le PDF d'un rapport |
-| PATCH | `/api/reports/:id/statut` | responsable | Changer le statut d'un rapport |
+| POST | `/api/reports` | technicien | Ajouter une panne à la fiche du jour |
+| GET | `/api/reports` | tous | Lister les fiches (filtré par technicien si rôle technicien) |
+| GET | `/api/reports/:id` | tous | Détail d'une fiche |
+| GET | `/api/reports/:id/pdf` | tous | Télécharger le PDF d'une fiche |
+| PATCH | `/api/reports/:id/statut` | responsable | Changer le statut d'une fiche |
+| DELETE | `/api/reports/:id` | responsable | Supprimer une fiche |
+| DELETE | `/api/reports/bulk` | responsable | Supprimer en masse (filtres en query string, date obligatoire) |
 | GET | `/api/reports/export/pdf` | responsable | Export PDF groupé (filtres en query string) |
-| POST | `/api/orders` | technicien | Créer une commande |
-| GET | `/api/orders` | tous | Lister les commandes |
-| GET | `/api/orders/:id/pdf` \| `/word` \| `/excel` | tous | Télécharger une commande |
-| PATCH | `/api/orders/:id/statut` | responsable | Changer le statut d'une commande |
-| GET | `/api/orders/export/excel` | responsable | Export Excel groupé |
+| POST | `/api/orders` | technicien | Ajouter un article à la commande du jour |
+| GET | `/api/orders` | tous | Lister les fiches commande |
+| GET | `/api/orders/:id/pdf` \| `/word` \| `/excel` | tous | Télécharger une fiche commande |
+| PATCH | `/api/orders/:orderId/items/:itemId/statut` | responsable | Changer le statut d'un article précis |
+| DELETE | `/api/orders/:id` | responsable | Supprimer une fiche commande |
+| DELETE | `/api/orders/bulk` | responsable | Supprimer en masse (filtres en query string, date obligatoire) |
+| GET | `/api/orders/export/excel` | responsable | Export Excel groupé (une ligne par article) |
 
 ---
 
-## 8. Déploiement
+## 8. Déploiement gratuit (MongoDB Atlas + Render)
 
-Ce projet est prêt pour un déploiement simple (un seul serveur Node sert l'API + les deux sites) :
+Ce projet est prêt pour un déploiement 100% gratuit, sans carte bancaire, en une seule brique backend qui sert l'API **et** les deux sites :
 
-- **Hébergeur backend** : Render, Railway, un VPS, etc. Définis les variables d'environnement du fichier `.env` sur la plateforme choisie.
-- **Base de données** : MongoDB Atlas (gratuit pour un usage de cette taille).
-- Une fois déployé, `https://ton-domaine.com/technicien` et `https://ton-domaine.com/responsable` sont utilisables directement.
+1. **Base de données** : crée un cluster gratuit **MongoDB Atlas** (M0, gratuit à vie) et récupère ta chaîne `MONGO_URI` — voir la section précédente.
+2. **Code sur GitHub** : pousse ce dossier dans un dépôt GitHub (`git init && git add . && git commit -m "init" && git push`). Le fichier `.gitignore` fourni exclut déjà `node_modules/` et `.env`.
+3. **Backend** : sur [render.com](https://render.com), crée un **Web Service** connecté à ton dépôt GitHub :
+   - Root Directory : `backend`
+   - Build Command : `npm install`
+   - Start Command : `npm start`
+   - Variables d'environnement : copie tout le contenu de ton `.env` local (MONGO_URI, JWT_SECRET, etc.) dans l'onglet "Environment" de Render.
+4. Une fois déployé, Render te donne une URL du type `https://unifood-togo.onrender.com`. Les deux sites sont immédiatement disponibles :
+   - `https://unifood-togo.onrender.com/technicien`
+   - `https://unifood-togo.onrender.com/responsable`
+
+⚠️ **Limite du gratuit chez Render** : le service s'endort après 15 minutes d'inactivité et met 30 à 60 secondes à se réveiller au premier accès suivant. C'est normal et sans danger pour les données — juste un temps de chargement au réveil. Une astuce gratuite : configurer un ping automatique toutes les 10 minutes avec [UptimeRobot](https://uptimerobot.com) sur `https://ton-url.onrender.com/api/health` pour garder le service éveillé aux heures de travail.
+
+Si tu préfères héberger les deux sites séparément (Netlify, Vercel...) plutôt que via le backend, voir la section suivante.
 
 ### Héberger les deux sites séparément (optionnel)
 

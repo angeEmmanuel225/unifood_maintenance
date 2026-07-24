@@ -18,56 +18,59 @@ function fieldRow(label, value) {
 }
 
 async function generateOrderWordBuffer(order) {
-  const doc = new Document({
-    sections: [
-      {
-        properties: {},
-        children: [
-          new Paragraph({
-            children: [new TextRun({ text: theme.companyName, bold: true, size: 32, color: '2B2E33' })],
-          }),
-          new Paragraph({
-            children: [new TextRun({ text: theme.companySubtitle, italics: true, size: 18, color: '6b7280' })],
-            spacing: { after: 300 },
-          }),
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'Bon de commande — Pièces & consommables', bold: true, color: 'C9722A' })],
-            spacing: { after: 250 },
-          }),
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [
-              fieldRow('Référence', String(order._id)),
-              fieldRow('Date de la commande', formatDate(order.createdAt)),
-              fieldRow('Statut', order.statutCommande),
-              fieldRow('Département', order.departement),
-              fieldRow('Technicien demandeur', order.technicienNom),
-              fieldRow('Désignation', order.designation),
-              fieldRow('Référence pièce', order.reference || '-'),
-              fieldRow('Quantité', `${order.quantite} ${order.unite || ''}`.trim()),
-              fieldRow('Urgence', order.urgence),
-              fieldRow('Date souhaitée', order.dateSouhaitee ? formatDate(order.dateSouhaitee) : 'Non précisée'),
-              fieldRow('Motif / justification', order.motif),
-              ...(order.noteResponsable ? [fieldRow('Note du responsable', order.noteResponsable)] : []),
-            ],
-          }),
-          new Paragraph({ text: '', spacing: { before: 400 } }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Document généré le ${new Date().toLocaleString('fr-FR')}`,
-                italics: true,
-                size: 16,
-                color: '6b7280',
-              }),
-            ],
-          }),
+  const children = [
+    new Paragraph({ children: [new TextRun({ text: theme.companyName, bold: true, size: 32, color: '2B2E33' })] }),
+    new Paragraph({
+      children: [new TextRun({ text: theme.companySubtitle, italics: true, size: 18, color: '6b7280' })],
+      spacing: { after: 300 },
+    }),
+    new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [new TextRun({ text: 'Bon de commande — Pièces & consommables', bold: true, color: 'C9722A' })],
+      spacing: { after: 150 },
+    }),
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        fieldRow('Référence fiche', String(order._id)),
+        fieldRow('Date de la commande', formatDate(order.dateCommande)),
+        fieldRow('Département', order.departement),
+        fieldRow('Technicien demandeur', order.technicienNom),
+        fieldRow("Nombre d'articles", String(order.items.length)),
+      ],
+    }),
+  ];
+
+  order.items.forEach((item, i) => {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 300, after: 100 },
+        children: [new TextRun({ text: `Article ${i + 1} — ${item.designation}`, bold: true, color: '6B3F2A' })],
+      }),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          fieldRow('Référence pièce', item.reference || '-'),
+          fieldRow('Quantité', `${item.quantite} ${item.unite || ''}`.trim()),
+          fieldRow('Urgence', item.urgence),
+          fieldRow('Statut', item.statutCommande),
+          fieldRow('Date souhaitée', item.dateSouhaitee ? formatDate(item.dateSouhaitee) : 'Non précisée'),
+          fieldRow('Motif / justification', item.motif),
+          ...(item.noteResponsable ? [fieldRow('Note du responsable', item.noteResponsable)] : []),
         ],
-      },
-    ],
+      })
+    );
   });
 
+  children.push(
+    new Paragraph({ text: '', spacing: { before: 400 } }),
+    new Paragraph({
+      children: [new TextRun({ text: `Document généré le ${new Date().toLocaleString('fr-FR')}`, italics: true, size: 16, color: '6b7280' })],
+    })
+  );
+
+  const doc = new Document({ sections: [{ properties: {}, children }] });
   return Packer.toBuffer(doc);
 }
 

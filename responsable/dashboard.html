@@ -76,7 +76,10 @@
       <div class="panel-card">
         <div class="panel-head">
           <div><h3>Rapports reçus</h3><p>Tous les rapports journaliers envoyés par les techniciens.</p></div>
-          <button class="btn btn-outline btn-sm" id="btn-export-reports-pdf"></button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline btn-sm" id="btn-export-reports-pdf"></button>
+            <button class="btn btn-outline btn-sm" id="btn-delete-reports-bulk" style="color:var(--raspberry); border-color:var(--raspberry);"></button>
+          </div>
         </div>
 
         <div class="filter-bar">
@@ -113,8 +116,8 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th><th>Technicien</th><th>Département</th><th>Horaire</th><th>Machine</th>
-                <th>Statut panne</th><th>Statut rapport</th><th></th>
+                <th>Date</th><th>Technicien</th><th>Département</th><th>Horaire</th><th>Pannes déclarées</th>
+                <th>Statut rapport</th><th>Exporté</th><th></th>
               </tr>
             </thead>
             <tbody id="reports-tbody"></tbody>
@@ -128,7 +131,10 @@
       <div class="panel-card">
         <div class="panel-head">
           <div><h3>Commandes reçues</h3><p>Toutes les demandes de pièces et consommables des techniciens.</p></div>
-          <button class="btn btn-outline btn-sm" id="btn-export-orders-excel"></button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline btn-sm" id="btn-export-orders-excel"></button>
+            <button class="btn btn-outline btn-sm" id="btn-delete-orders-bulk" style="color:var(--raspberry); border-color:var(--raspberry);"></button>
+          </div>
         </div>
 
         <div class="filter-bar">
@@ -166,8 +172,8 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th><th>Technicien</th><th>Département</th><th>Désignation</th><th>Qté</th>
-                <th>Urgence</th><th>Statut</th><th></th>
+                <th>Date</th><th>Technicien</th><th>Département</th><th>Articles commandés</th>
+                <th>Exporté</th><th></th>
               </tr>
             </thead>
             <tbody id="orders-tbody"></tbody>

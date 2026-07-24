@@ -4,7 +4,39 @@ const { theme, formatDate, drawHeader, drawStamp, drawField, drawSignatures, dra
 function urgenceColor(urgence) {
   if (urgence === 'Critique') return theme.colors.raspberry;
   if (urgence === 'Urgente') return theme.colors.yellow;
-  return theme.colors.mint; // Normale
+  return theme.colors.mint;
+}
+
+function drawItem(doc, y, item, index) {
+  if (y > 620) {
+    doc.addPage();
+    y = 60;
+  }
+
+  doc.moveTo(50, y).lineTo(545, y).strokeColor('#E3D9CC').stroke();
+  y += 12;
+
+  doc.font('Helvetica-Bold').fontSize(10.5).fillColor(theme.colors.praline).text(`Article ${index + 1} — ${item.designation}`, 50, y, { width: 380 });
+  drawStamp(doc, item.urgence, urgenceColor(item.urgence), 400, y - 4, 145);
+  y += 18;
+
+  doc.font('Helvetica').fontSize(9).fillColor(theme.colors.gray)
+    .text(`Quantité : ${item.quantite} ${item.unite || ''}    Statut : ${item.statutCommande}    Réf. : ${item.reference || '-'}`, 50, y, { width: 495 });
+  y += 16;
+
+  doc.font('Helvetica-Bold').fontSize(8).fillColor(theme.colors.gray).text('MOTIF / JUSTIFICATION', 50, y);
+  y += 12;
+  doc.font('Helvetica').fontSize(10).fillColor('#1a1a1a').text(item.motif || '-', 50, y, { width: 495 });
+  y += doc.heightOfString(item.motif || '-', { width: 495 }) + 10;
+
+  if (item.noteResponsable) {
+    doc.font('Helvetica-Bold').fontSize(8).fillColor(theme.colors.gray).text('NOTE DU RESPONSABLE', 50, y);
+    y += 12;
+    doc.font('Helvetica').fontSize(10).fillColor('#1a1a1a').text(item.noteResponsable, 50, y, { width: 495 });
+    y += doc.heightOfString(item.noteResponsable, { width: 495 }) + 10;
+  }
+
+  return y + 6;
 }
 
 function generateOrderPDF(order, res) {
@@ -15,23 +47,18 @@ function generateOrderPDF(order, res) {
   doc.pipe(res);
 
   let y = drawHeader(doc, 'Bon de Commande - Pièces & Consommables', order._id);
-  drawStamp(doc, order.urgence, urgenceColor(order.urgence));
+  y += 20;
 
-  y += 25;
   const col1X = 50;
   const col2X = 300;
   const colWidth = 220;
-  const rowHeight = 45;
+  const rowHeight = 40;
 
   const fields = [
-    ['Date de la commande', formatDate(order.createdAt)],
-    ['Statut', order.statutCommande],
+    ['Date de la commande', formatDate(order.dateCommande)],
     ['Département', order.departement],
     ['Technicien demandeur', order.technicienNom],
-    ['Désignation', order.designation],
-    ['Référence', order.reference],
-    ['Quantité', `${order.quantite} ${order.unite || ''}`.trim()],
-    ['Date souhaitée', order.dateSouhaitee ? formatDate(order.dateSouhaitee) : 'Non précisée'],
+    ['Nombre d\u2019articles', String(order.items.length)],
   ];
 
   fields.forEach((f, i) => {
@@ -40,20 +67,14 @@ function generateOrderPDF(order, res) {
     drawField(doc, col, y + row * rowHeight, colWidth, f[0], f[1]);
   });
 
-  y = y + Math.ceil(fields.length / 2) * rowHeight + 8;
-  doc.moveTo(50, y).lineTo(545, y).strokeColor('#E3D9CC').stroke();
-  y += 15;
+  y += Math.ceil(fields.length / 2) * rowHeight + 10;
 
-  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(theme.colors.gray).text('MOTIF / JUSTIFICATION', 50, y, { width: 495 });
-  y += 14;
-  doc.font('Helvetica').fontSize(10.5).fillColor('#1a1a1a').text(order.motif || '-', 50, y, { width: 495 });
-  y += doc.heightOfString(order.motif || '-', { width: 495 }) + 18;
-
-  if (order.noteResponsable) {
-    doc.font('Helvetica-Bold').fontSize(8.5).fillColor(theme.colors.gray).text('NOTE DU RESPONSABLE', 50, y, { width: 495 });
-    y += 14;
-    doc.font('Helvetica').fontSize(10.5).fillColor('#1a1a1a').text(order.noteResponsable, 50, y, { width: 495 });
-    y += doc.heightOfString(order.noteResponsable, { width: 495 }) + 18;
+  if (!order.items.length) {
+    doc.font('Helvetica').fontSize(10).fillColor(theme.colors.gray).text('Aucun article sur cette commande.', 50, y);
+  } else {
+    order.items.forEach((item, i) => {
+      y = drawItem(doc, y, item, i);
+    });
   }
 
   if (y > 640) {
