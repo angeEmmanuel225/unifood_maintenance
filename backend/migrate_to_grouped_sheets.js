@@ -23,7 +23,6 @@ function dayKey(date) {
   return toDayStart(date).toISOString();
 }
 
-
 async function migrateReports(db) {
   const collections = await db.listCollections({ name: 'reports' }).toArray();
   if (!collections.length) {

@@ -77,6 +77,7 @@
     <nav class="tab-strip">
       <button class="tab-btn active" data-tab="rapports" id="tab-rapports"></button>
       <button class="tab-btn" data-tab="commandes" id="tab-commandes"></button>
+      <button class="tab-btn" data-tab="annonces" id="tab-annonces"></button>
     </nav>
 
     <!-- ================= RAPPORTS REÇUS ================= -->
@@ -187,6 +188,49 @@
             <tbody id="orders-tbody"></tbody>
           </table>
         </div>
+      </div>
+    </section>
+
+    <!-- ================= ANNONCES ================= -->
+    <section class="tab-panel" id="panel-annonces">
+      <div class="panel-card" style="margin-bottom:24px;">
+        <div class="panel-head">
+          <div><h3>Publier une annonce</h3><p>Visible immédiatement par tous les techniciens, dès leur connexion.</p></div>
+        </div>
+        <form id="announcement-form" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="an-titre">Titre</label>
+              <input type="text" id="an-titre" required placeholder="Ex : Planning semaine du 27 juillet">
+            </div>
+            <div class="field">
+              <label for="an-type">Type</label>
+              <select id="an-type">
+                <option value="Message">Message</option>
+                <option value="Planning de la semaine">Planning de la semaine</option>
+                <option value="Annonce importante">Annonce importante</option>
+              </select>
+            </div>
+            <div class="field" id="an-expire-field" style="display:none;">
+              <label for="an-expire">Valable jusqu'au <small class="hint">(suppression automatique après cette date)</small></label>
+              <input type="date" id="an-expire">
+            </div>
+            <div class="field full">
+              <label for="an-contenu">Contenu</label>
+              <textarea id="an-contenu" required placeholder="Écris ton message ou colle le planning de la semaine ici..." style="min-height:160px;"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="announcement-submit" style="width:auto;">Publier</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-head">
+          <div><h3>Annonces publiées</h3><p>Historique complet, y compris les annonces archivées.</p></div>
+        </div>
+        <div id="announcements-manage-list"></div>
       </div>
     </section>
   </main>

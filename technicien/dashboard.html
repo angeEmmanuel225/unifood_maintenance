@@ -55,6 +55,7 @@
   </header>
 
   <main class="shell-container">
+    <div id="announcement-banner" style="display:none;"></div>
     <div class="stat-row" id="stat-row">
       <div class="stat-card">
         <div class="stat-dial" id="ic-stat-1"></div>
@@ -71,6 +72,7 @@
     </div>
 
     <nav class="tab-strip">
+      <button class="tab-btn" data-tab="annonces" id="tab-annonces"></button>
       <button class="tab-btn active" data-tab="nouveau-rapport" id="tab-nouveau-rapport"></button>
       <button class="tab-btn" data-tab="nouvelle-commande" id="tab-nouvelle-commande"></button>
       <button class="tab-btn" data-tab="mes-rapports" id="tab-mes-rapports"></button>
@@ -78,6 +80,16 @@
     </nav>
 
     <!-- ================= NOUVEAU RAPPORT ================= -->
+    <!-- ================= ANNONCES ================= -->
+    <section class="tab-panel" id="panel-annonces">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div><h3>Annonces du responsable</h3><p>Planning de la semaine et messages destinés à toute l'équipe technique.</p></div>
+        </div>
+        <div id="announcements-list"></div>
+      </div>
+    </section>
+
     <section class="tab-panel active" id="panel-nouveau-rapport">
       <div class="panel-card">
         <div class="panel-head">

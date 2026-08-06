@@ -103,6 +103,7 @@
   document.getElementById('tab-nouvelle-commande').innerHTML = icon('package', 15) + ' Nouvelle commande';
   document.getElementById('tab-mes-rapports').innerHTML = icon('fileText', 15) + ' Mes rapports';
   document.getElementById('tab-mes-commandes').innerHTML = icon('cart', 15) + ' Mes commandes';
+  document.getElementById('tab-annonces').innerHTML = icon('bell', 15) + ' Annonces';
   document.getElementById('ic-stat-1').innerHTML = icon('clock', 20);
   document.getElementById('ic-stat-2').innerHTML = icon('flame', 20);
   document.getElementById('ic-stat-3').innerHTML = icon('cart', 20);
@@ -126,6 +127,7 @@
       document.getElementById(`panel-${btn.dataset.tab}`).classList.add('active');
       if (btn.dataset.tab === 'mes-rapports') loadReports();
       if (btn.dataset.tab === 'mes-commandes') loadOrders();
+      if (btn.dataset.tab === 'annonces') loadAnnouncementsList();
     });
   });
 
@@ -158,6 +160,71 @@
     document.getElementById('stat-today').textContent = rStats.rapportsAujourdhui ?? '0';
     document.getElementById('stat-encours').textContent = rStats.pannesEnCours ?? '0';
     document.getElementById('stat-attente').textContent = oStats.enAttente ?? '0';
+  }
+
+  // ---------- annonces ----------
+  const DISMISSED_KEY = 'unifood_technicien_dismissed_announcement';
+
+  function typeStampClass(type) {
+    if (type === 'Annonce importante') return 'raspberry';
+    if (type === 'Planning de la semaine') return 'mint';
+    return 'amber';
+  }
+
+  async function loadAnnouncementBanner() {
+    const res = await authFetch('/announcements');
+    const list = await res.json();
+    const banner = document.getElementById('announcement-banner');
+    if (!list.length) {
+      banner.style.display = 'none';
+      return;
+    }
+    const latest = list[0];
+    const dismissed = localStorage.getItem(DISMISSED_KEY);
+    if (dismissed === latest._id) {
+      banner.style.display = 'none';
+      return;
+    }
+    banner.innerHTML = `
+      <div class="ann-icon">${icon(latest.type === 'Planning de la semaine' ? 'calendar' : 'megaphone', 18)}</div>
+      <div class="ann-body">
+        <div class="ann-eyebrow">${escapeHtml(latest.type)} · ${escapeHtml(latest.auteur)}</div>
+        <h4>${escapeHtml(latest.titre)}</h4>
+        <p>${escapeHtml(truncate(latest.contenu, 160))}</p>
+      </div>
+      <button class="ann-close" id="ann-banner-close" title="Fermer">${icon('x', 16)}</button>
+    `;
+    banner.style.display = 'flex';
+    document.getElementById('ann-banner-close').addEventListener('click', () => {
+      localStorage.setItem(DISMISSED_KEY, latest._id);
+      banner.style.display = 'none';
+    });
+  }
+
+  async function loadAnnouncementsList() {
+    const container = document.getElementById('announcements-list');
+    container.innerHTML = `<div class="empty-state"><span class="spinner dark"></span></div>`;
+    const res = await authFetch('/announcements');
+    const list = await res.json();
+
+    if (!list.length) {
+      container.innerHTML = `<div class="empty-state">${icon('bell', 34)}<p>Aucune annonce pour le moment.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = list
+      .map(
+        (a) => `
+      <div class="announcement-card">
+        <div class="ann-head">
+          <h4>${escapeHtml(a.titre)}</h4>
+          <span class="stamp ${typeStampClass(a.type)}">${escapeHtml(a.type)}</span>
+        </div>
+        <div class="ann-meta">Publié par ${escapeHtml(a.auteur)} · ${formatDateFR(a.createdAt)}${a.expireLe ? ` · Valable jusqu'au ${formatDateFR(a.expireLe)}` : ''}</div>
+        <div class="ann-content">${escapeHtml(a.contenu)}</div>
+      </div>`
+      )
+      .join('');
   }
 
   // ---------- report form ----------
@@ -425,6 +492,7 @@
 
       await loadDepartments();
       await loadStats();
+      await loadAnnouncementBanner();
 
       document.getElementById('page-loader').style.display = 'none';
       document.getElementById('app').style.display = 'block';

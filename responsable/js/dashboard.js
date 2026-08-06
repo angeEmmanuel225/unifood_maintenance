@@ -107,6 +107,7 @@
   document.getElementById('logout-btn').innerHTML = icon('logout', 17);
   document.getElementById('tab-rapports').innerHTML = icon('fileText', 15) + ' Rapports reçus';
   document.getElementById('tab-commandes').innerHTML = icon('cart', 15) + ' Commandes reçues';
+  document.getElementById('tab-annonces').innerHTML = icon('bell', 15) + ' Annonces';
   document.getElementById('ic-stat-1').innerHTML = icon('clock', 20);
   document.getElementById('ic-stat-2').innerHTML = icon('flame', 20);
   document.getElementById('ic-stat-3').innerHTML = icon('cart', 20);
@@ -134,6 +135,7 @@
       document.getElementById(`panel-${btn.dataset.tab}`).classList.add('active');
       if (btn.dataset.tab === 'rapports') loadReports();
       if (btn.dataset.tab === 'commandes') loadOrders();
+      if (btn.dataset.tab === 'annonces') loadAnnouncementsManageList();
     });
   });
 
@@ -155,6 +157,122 @@
     document.getElementById('stat-encours').textContent = rStats.pannesEnCours ?? '0';
     document.getElementById('stat-attente').textContent = oStats.enAttente ?? '0';
     document.getElementById('stat-urgentes').textContent = oStats.urgentes ?? '0';
+  }
+
+  // ================= ANNONCES =================
+  function typeStampClass(type) {
+    if (type === 'Annonce importante') return 'raspberry';
+    if (type === 'Planning de la semaine') return 'mint';
+    return 'amber';
+  }
+
+  const announcementForm = document.getElementById('announcement-form');
+  const anTypeSelect = document.getElementById('an-type');
+  const anExpireField = document.getElementById('an-expire-field');
+  const anExpireInput = document.getElementById('an-expire');
+
+  function nextSaturday() {
+    const d = new Date();
+    const day = d.getDay(); // 0=dimanche ... 6=samedi
+    const diff = (6 - day + 7) % 7 || 7;
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+
+  anTypeSelect.addEventListener('change', () => {
+    const isPlanning = anTypeSelect.value === 'Planning de la semaine';
+    anExpireField.style.display = isPlanning ? 'flex' : 'none';
+    anExpireInput.required = isPlanning;
+    if (isPlanning && !anExpireInput.value) {
+      anExpireInput.value = nextSaturday().toISOString().slice(0, 10);
+    }
+  });
+
+  announcementForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('announcement-submit');
+    const payload = {
+      titre: document.getElementById('an-titre').value,
+      type: document.getElementById('an-type').value,
+      contenu: document.getElementById('an-contenu').value,
+      expireLe: anExpireInput.value || undefined,
+    };
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Publication...';
+    try {
+      const res = await authFetch('/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || 'Erreur lors de la publication.', 'error');
+        return;
+      }
+      showToast('Annonce publiée — visible chez tous les techniciens.');
+      announcementForm.reset();
+      anExpireField.style.display = 'none';
+      loadAnnouncementsManageList();
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Publier';
+    }
+  });
+
+  async function loadAnnouncementsManageList() {
+    const container = document.getElementById('announcements-manage-list');
+    container.innerHTML = `<div class="empty-state"><span class="spinner dark"></span></div>`;
+    const res = await authFetch('/announcements');
+    const list = await res.json();
+
+    if (!list.length) {
+      container.innerHTML = `<div class="empty-state">${icon('bell', 34)}<p>Aucune annonce publiée pour l'instant.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = list
+      .map(
+        (a) => `
+      <div class="announcement-card ${a.actif ? '' : 'inactive'}" data-id="${a._id}">
+        <div class="ann-head">
+          <h4>${escapeHtml(a.titre)}</h4>
+          <span class="stamp ${typeStampClass(a.type)}">${escapeHtml(a.type)}</span>
+        </div>
+        <div class="ann-meta">${escapeHtml(a.auteur)} · ${formatDateFR(a.createdAt)} · ${a.actif ? 'Active' : 'Archivée'}${a.expireLe ? ` · Se supprime automatiquement le ${formatDateFR(a.expireLe)}` : ''}</div>
+        <div class="ann-content">${escapeHtml(a.contenu)}</div>
+        <div class="form-actions" style="margin-top:12px; justify-content:flex-start;">
+          <button class="btn btn-outline btn-sm ann-toggle" data-id="${a._id}" data-actif="${a.actif}">${a.actif ? 'Archiver' : 'Réactiver'}</button>
+          <button class="btn btn-outline btn-sm ann-delete" data-id="${a._id}" style="color:var(--raspberry); border-color:var(--raspberry);">${icon('x', 14)} Supprimer</button>
+        </div>
+      </div>`
+      )
+      .join('');
+
+    container.querySelectorAll('.ann-toggle').forEach((b) =>
+      b.addEventListener('click', async () => {
+        const actif = b.dataset.actif === 'true';
+        const res = await authFetch(`/announcements/${b.dataset.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actif: !actif }),
+        });
+        if (res.ok) {
+          showToast(actif ? 'Annonce archivée.' : 'Annonce réactivée.');
+          loadAnnouncementsManageList();
+        }
+      })
+    );
+    container.querySelectorAll('.ann-delete').forEach((b) =>
+      b.addEventListener('click', async () => {
+        if (!confirm('Supprimer définitivement cette annonce ?')) return;
+        const res = await authFetch(`/announcements/${b.dataset.id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast('Annonce supprimée.');
+          loadAnnouncementsManageList();
+        }
+      })
+    );
   }
 
   // ================= RAPPORTS =================
