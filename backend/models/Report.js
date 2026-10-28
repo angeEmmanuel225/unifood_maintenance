@@ -4,21 +4,20 @@ const HORAIRES = ['06h-14h', '14h-22h', '22h-06h', 'Journée 08h-16h'];
 const STATUTS_PANNE = ['Résolue', 'En cours', 'Non résolue'];
 const STATUTS_RAPPORT = ['Nouveau', 'Lu', 'Traité'];
 
+// Une ligne du grand tableau de la fiche
 const reportEntrySchema = new mongoose.Schema(
   {
     machineConcernee: { type: String, required: true, trim: true },
-    descriptionPanne: { type: String, required: true, trim: true },
-    actionMenee: { type: String, required: true, trim: true },
-    heureDebut: { type: String, required: true },
-    heureFin: { type: String, required: true },
+    descriptionPanne: { type: String, required: true, trim: true }, // "Panne ou observations"
+    actionMenee: { type: String, default: '', trim: true }, // "Tâche effectuée"
+    heureDebut: { type: String, default: '' },
+    heureFin: { type: String, default: '' },
     statutPanne: { type: String, enum: STATUTS_PANNE, default: 'Résolue' },
-    observations: { type: String, trim: true },
   },
   { timestamps: true }
 );
 
-// Une "fiche" = tout ce qu'un technicien a rempli pour une même date.
-// entries[] contient chaque panne/action déclarée ce jour-là.
+// Une fiche = tout ce qu'un technicien déclare pour une même date.
 const reportSchema = new mongoose.Schema(
   {
     technicien: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -26,8 +25,11 @@ const reportSchema = new mongoose.Schema(
     departement: { type: String, required: true, trim: true },
     responsableDepartement: { type: String, required: true, trim: true },
     horaire: { type: String, enum: HORAIRES, required: true },
-    dateRapport: { type: Date, required: true }, // toujours normalisé à minuit (voir toDayStart)
+    dateRapport: { type: Date, required: true }, // normalisé à minuit
     entries: { type: [reportEntrySchema], default: [] },
+    // Signature dessinée (petit PNG en base64) — exclue des listes pour rester léger
+    signature: { type: String, default: '', select: false },
+    nbPhotos: { type: Number, default: 0 },
     statutRapport: { type: String, enum: STATUTS_RAPPORT, default: 'Nouveau' },
     exporte: { type: Boolean, default: false },
   },
@@ -38,7 +40,6 @@ reportSchema.index({ technicien: 1, dateRapport: 1 }, { unique: true });
 reportSchema.index({ departement: 1 });
 
 reportSchema.statics.HORAIRES = HORAIRES;
-reportSchema.statics.STATUTS_PANNE = STATUTS_PANNE;
 reportSchema.statics.STATUTS_RAPPORT = STATUTS_RAPPORT;
 
 module.exports = mongoose.model('Report', reportSchema);

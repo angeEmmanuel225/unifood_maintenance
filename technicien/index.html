@@ -65,14 +65,14 @@
     <div class="ticket-card">
       <div class="ticket-eyebrow">Fiche de connexion · Technicien</div>
       <h2>Bon retour</h2>
-      <p class="subtitle">Connectez-vous pour démarrer votre rapport de shift.</p>
+      <p class="subtitle">Entre l'identifiant et le mot de passe donnés par l'administrateur.</p>
 
       <div class="form-error" id="login-error"></div>
 
       <form id="login-form" novalidate>
         <div class="field">
-          <label for="email">Adresse email</label>
-          <input type="email" id="email" name="email" placeholder="prenom.nom@unifoodtogo.tg" required autocomplete="username">
+          <label for="email">Identifiant</label>
+          <input type="text" id="email" name="email" placeholder="ex : prenom.nom" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
         </div>
         <div class="field">
           <label for="password">Mot de passe</label>
@@ -81,10 +81,8 @@
         <button type="submit" class="btn btn-primary" id="login-submit">Se connecter</button>
       </form>
 
-     
-
       <div class="switch-link">
-        Vous êtes responsable maintenance ? <a href="../responsable/index.html">Accéder à l'espace responsable →</a>
+        Vous êtes administrateur ? <a href="../responsable/index.html">Accéder à l'espace administrateur →</a>
       </div>
     </div>
   </div>
@@ -92,6 +90,6 @@
 
 <script src="js/config.js"></script>
 <script src="js/login.js"></script>
-<script src="js/pwa.js"></script>
+<script src="js/pwa.js" data-app-name="UNIFOOD Technicien" data-icon="assets/icon-192.png"></script>
 </body>
 </html>

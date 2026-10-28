@@ -1,7 +1,7 @@
 {
-  "name": "UNIFOOD TOGO — Espace Responsable",
-  "short_name": "UNIFOOD Responsable",
-  "description": "Supervision des rapports de maintenance et commandes - UNIFOOD TOGO",
+  "name": "UNIFOOD TOGO — Espace Administrateur",
+  "short_name": "UNIFOOD Admin",
+  "description": "Administration : rapports, commandes, sorties magasin, annonces et comptes - UNIFOOD TOGO",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
