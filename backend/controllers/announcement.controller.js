@@ -1,5 +1,6 @@
 const Announcement = require('../models/Announcement');
 const AnnouncementFile = require('../models/AnnouncementFile');
+const { notifyTechnicians } = require('../utils/push');
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo par fichier
 const MAX_FILES = 6;
@@ -65,6 +66,16 @@ exports.createAnnouncement = async (req, res) => {
     });
     await attachFiles(announcement, files);
     res.status(201).json(announcement);
+
+    // Notification sur les téléphones / PC des techniciens (en arrière-plan)
+    const texte = String(contenu || '').trim();
+    const nbFichiers = files.length;
+    notifyTechnicians({
+      title: `${announcement.type === 'Planning de la semaine' ? '📅' : announcement.type === 'Annonce importante' ? '⚠️' : '📢'} ${announcement.type} — UNIFOOD`,
+      body: `${announcement.titre}${texte ? ` : ${texte.slice(0, 140)}` : ''}${nbFichiers ? ` (${nbFichiers} fichier${nbFichiers > 1 ? 's' : ''} joint${nbFichiers > 1 ? 's' : ''})` : ''}`,
+      tag: `annonce-${announcement._id}`,
+      url: '/technicien/dashboard.html#annonces',
+    }).catch((err) => console.error('Notification annonce :', err.message));
   } catch (err) {
     res.status(500).json({ message: "Erreur lors de la publication de l'annonce.", error: err.message });
   }

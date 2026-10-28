@@ -1,9 +1,9 @@
 // Service worker : permet l'installation et garde les pages déjà visitées disponibles hors-ligne.
 // Les appels à l'API (données, photos, fichiers) ne sont JAMAIS mis en cache.
-const CACHE_NAME = 'unifood-responsable-v3';
+const CACHE_NAME = 'unifood-responsable-v4';
 const PRECACHE_URLS = [
   './', './index.html', './dashboard.html', './css/style.css',
-  './js/config.js', './js/icons.js', './js/login.js', './js/dashboard.js', './js/pwa.js', './js/image-tools.js',
+  './js/config.js', './js/icons.js', './js/login.js', './js/dashboard.js', './js/pwa.js', './js/image-tools.js', './js/photo-cache.js',
   './js/comptes.js',
 ];
 

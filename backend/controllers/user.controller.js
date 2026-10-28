@@ -164,6 +164,7 @@ exports.deleteUser = async (req, res) => {
   try {
     const r = await User.deleteOne({ _id: req.params.id, role: 'technicien' });
     if (!r.deletedCount) return res.status(404).json({ message: 'Compte introuvable.' });
+    await require('../models/PushSubscription').deleteMany({ user: req.params.id });
     res.json({ message: 'Compte supprimé.', id: req.params.id });
   } catch (err) {
     res.status(500).json({ message: 'Erreur lors de la suppression.', error: err.message });

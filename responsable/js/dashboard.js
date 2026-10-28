@@ -227,10 +227,74 @@
       </tr>`;
       })
       .join('');
+    // Copie des photos sur cet appareil (elles restent visibles après leur suppression de la base)
+    if (window.PhotoCache) PhotoCache.sync(reports, authFetch);
     tbody.querySelectorAll('.view-report').forEach((b) => b.addEventListener('click', () => showReportModal(b.dataset.id)));
     tbody.querySelectorAll('.dl-report-pdf').forEach((b) => b.addEventListener('click', () => downloadFile(`/reports/${b.dataset.id}/pdf`, `rapport-${b.dataset.id}.pdf`).then(loadReports)));
     tbody.querySelectorAll('.statut-rapport-select').forEach((sel) => sel.addEventListener('change', () => updateReportStatus(sel.dataset.id, sel.value)));
     tbody.querySelectorAll('.del-report').forEach((b) => b.addEventListener('click', () => deleteReport(b.dataset.id)));
+  }
+
+  // Photos : base en ligne (30 jours) puis copie gardée sur cet appareil
+  async function showReportPhotos(r, box) {
+    const note = $('modal-photos-note');
+    if (!window.PhotoCache) return hydrateImages(box);
+    const info = await PhotoCache.render(box, r, authFetch);
+    if (!info.total) {
+      box.innerHTML = '';
+      note.textContent = 'Photos supprimées de la base (plus de 30 jours) et absentes de cet appareil : voir la sauvegarde PDF sur le Drive / le PC.';
+      return;
+    }
+    note.textContent = info.localOnly
+      ? 'Supprimées de la base en ligne — affichées depuis la copie gardée sur cet appareil.'
+      : 'Copie gardée aussi sur cet appareil. Dans la base en ligne : 30 jours.';
+    const btn = $('modal-save-photos');
+    btn.hidden = false;
+    const base = `rapport-${String(r.dateRapport).slice(0, 10)}-${(r.technicienNom || '').replace(/[^a-z0-9]+/gi, '_')}`;
+    btn.addEventListener('click', () => PhotoCache.saveFiles(info.blobs, base));
+  }
+
+  // ================= ALERTE DE SAUVEGARDE =================
+  async function loadBackupStatus() {
+    const box = $('backup-alert');
+    try {
+      const res = await authFetch('/reports/backup-status');
+      if (!res.ok) return;
+      const s = await res.json();
+      if (!s.urgents && !s.enRetard) {
+        box.hidden = true;
+        box.style.display = 'none';
+        return;
+      }
+      const urgent = s.urgents > 0;
+      const quand = s.premiereSuppression ? new Date(s.premiereSuppression).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : '';
+      const titre = urgent
+        ? `${s.urgents} fiche(s) avec photos non sauvegardée(s) — photos supprimées de la base à partir du ${quand}`
+        : `${s.enRetard} fiche(s) de plus de 20 jours pas encore sauvegardée(s)`;
+      box.hidden = false;
+      box.style.cssText = `display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; padding:14px 16px; border-radius:12px; border:1px solid ${urgent ? '#e0a1b0' : '#e8c98a'}; background:${urgent ? '#fdecef' : '#fff6e0'};`;
+      box.innerHTML = `
+        <div style="flex:1; min-width:220px;">
+          <strong style="display:block;">${icon('alert', 15)} Sauvegarde des rapports — ${escapeHtml(titre)}</strong>
+          <span style="font-size:0.85rem; color:var(--gray);">Télécharge le PDF (fiches + signatures + photos) et range-le sur le <b>Drive de l'entreprise</b>, le PC ou une clé USB pour toujours y avoir accès. ${s.nonExportes} fiche(s) à sauvegarder au total${s.nonExportes > 150 ? ' (150 par fichier : clique plusieurs fois)' : ''}.</span>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btn-backup-pdf" style="width:auto;">${icon('download', 15)} Télécharger la sauvegarde PDF</button>
+        <button class="btn btn-ghost btn-sm" id="btn-backup-later">Plus tard</button>`;
+      $('btn-backup-pdf').addEventListener('click', async (e) => {
+        e.target.disabled = true;
+        const day = new Date().toISOString().slice(0, 10);
+        await downloadFile('/reports/export/pdf?nonExportes=1', `UNIFOOD-rapports-sauvegarde-${day}.pdf`);
+        showToast('PDF téléchargé : range-le maintenant sur le Drive de l\'entreprise ou le PC.');
+        loadBackupStatus();
+        loadReports();
+      });
+      $('btn-backup-later').addEventListener('click', () => {
+        box.hidden = true;
+        box.style.display = 'none';
+      });
+    } catch (e) {
+      /* hors connexion */
+    }
   }
 
   async function updateReportStatus(id, statutRapport) {
@@ -241,6 +305,7 @@
     if (!confirm('Supprimer définitivement cette fiche (et ses photos) ? Cette action est irréversible.')) return;
     const res = await authFetch(`/reports/${id}`, { method: 'DELETE' });
     if (res.ok) {
+      if (window.PhotoCache) PhotoCache.removeReport(id);
       showToast('Fiche supprimée.');
       closeModal();
       loadReports();
@@ -263,7 +328,7 @@
       .map((e) => `<tr><td>${escapeHtml(e.machineConcernee)}</td><td>${escapeHtml(e.descriptionPanne)}</td><td>${escapeHtml(e.actionMenee)}</td><td>${escapeHtml(e.heureDebut)}</td><td>${escapeHtml(e.heureFin)}</td></tr>`)
       .join('') ||
       `<tr><td colspan="5" style="text-align:center; color:var(--gray);">${r.nbPhotos ? 'Rapport écrit envoyé en photo (voir ci-dessous).' : 'Aucune ligne.'}</td></tr>`;
-    const photos = (r.photos || []).map((p) => `<img class="att-img" data-src="/reports/photo/${p._id}" alt="Photo du rapport">`).join('');
+    const photos = r.nbPhotos > 0 || (r.photos || []).length;
     openModal(
       `
       <button class="modal-close" id="modal-close">${icon('x', 16)}</button>
@@ -276,7 +341,7 @@
         <tbody>${rows}</tbody>
       </table></div>
       ${r.signature ? `<p class="cell-muted" style="margin-top:16px;">Signature du technicien</p><img class="modal-sig" src="${r.signature}" alt="Signature">` : ''}
-      ${photos ? `<p class="cell-muted" style="margin-top:16px;">Photos du rapport papier (conservées 30 jours)</p><div class="att-grid" id="modal-photos">${photos}</div>` : ''}
+      ${photos ? `<p class="cell-muted" style="margin-top:16px;">Photos du rapport papier</p><p class="cell-muted" id="modal-photos-note" style="font-size:0.78rem;"></p><div class="att-grid" id="modal-photos"><span class="spinner dark"></span></div><button class="btn btn-outline btn-sm" id="modal-save-photos" style="margin-top:8px;" hidden>${icon('download', 14)} Enregistrer les photos</button>` : ''}
       <div class="field" style="margin-top:16px; max-width:240px;">
         <label>Statut du rapport</label>
         <select id="modal-statut-rapport">${['Nouveau', 'Lu', 'Traité'].map((s) => `<option value="${s}" ${r.statutRapport === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
@@ -297,7 +362,7 @@
       loadReports();
     });
     const pb = $('modal-photos');
-    if (pb) hydrateImages(pb);
+    if (pb) showReportPhotos(r, pb);
   }
 
   $('fr-btn-filtrer').addEventListener('click', loadReports);
@@ -745,6 +810,7 @@
       await loadDepartments();
       await loadStats();
       await loadReports();
+      loadBackupStatus();
       $('page-loader').style.display = 'none';
       $('app').style.display = 'block';
       window.UF._fire();

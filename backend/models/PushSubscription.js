@@ -1,0 +1,15 @@
+const mongoose = require('mongoose');
+
+// Abonnement aux notifications d'un appareil (téléphone ou PC) d'un technicien
+const pushSubscriptionSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  endpoint: { type: String, required: true, unique: true },
+  keys: {
+    p256dh: { type: String, required: true },
+    auth: { type: String, required: true },
+  },
+  appareil: { type: String, default: '' },
+  createdAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model('PushSubscription', pushSubscriptionSchema);

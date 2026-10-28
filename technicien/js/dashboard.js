@@ -325,6 +325,8 @@
       </tr>`;
       })
       .join('');
+    // Copie des photos sur ce téléphone (elles restent visibles après leur suppression de la base)
+    if (window.PhotoCache) PhotoCache.sync(reports, authFetch);
     tbody.querySelectorAll('.view-report').forEach((b) => b.addEventListener('click', () => showReportModal(b.dataset.id)));
   }
 
@@ -339,7 +341,7 @@
       .map((e) => `<tr><td>${escapeHtml(e.machineConcernee)}</td><td>${escapeHtml(e.descriptionPanne)}</td><td>${escapeHtml(e.actionMenee)}</td><td>${escapeHtml(e.heureDebut)}</td><td>${escapeHtml(e.heureFin)}</td></tr>`)
       .join('') ||
       `<tr><td colspan="5" style="text-align:center; color:var(--gray);">${r.nbPhotos ? 'Rapport écrit envoyé en photo (voir ci-dessous).' : 'Aucune ligne.'}</td></tr>`;
-    const photos = (r.photos || []).map((p) => `<img class="att-img" data-src="/reports/photo/${p._id}" alt="Photo du rapport">`).join('');
+    const photos = r.nbPhotos > 0 || (r.photos || []).length;
     openModal(
       `
       <button class="modal-close" id="modal-close">${icon('x', 16)}</button>
@@ -351,7 +353,7 @@
         <tbody>${rows}</tbody>
       </table></div>
       ${r.signature ? `<p class="cell-muted" style="margin-top:16px;">Signature</p><img class="modal-sig" src="${r.signature}" alt="Signature">` : ''}
-      ${photos ? `<p class="cell-muted" style="margin-top:16px;">Photos jointes</p><div class="att-grid" id="modal-photos">${photos}</div>` : ''}
+      ${photos ? `<p class="cell-muted" style="margin-top:16px;">Photos jointes</p><p class="cell-muted" id="modal-photos-note" style="font-size:0.78rem;"></p><div class="att-grid" id="modal-photos"><span class="spinner dark"></span></div><button class="btn btn-outline btn-sm" id="modal-save-photos" style="margin-top:8px;" hidden>${icon('download', 14)} Enregistrer les photos</button>` : ''}
       <div class="form-actions" style="margin-top:18px;">
         <button class="btn btn-outline" id="modal-pdf">${icon('download', 15)} Télécharger le PDF</button>
       </div>`,
@@ -360,7 +362,25 @@
     document.getElementById('modal-close').addEventListener('click', closeModal);
     document.getElementById('modal-pdf').addEventListener('click', () => downloadFile(`/reports/${r._id}/pdf`, `rapport-${r._id}.pdf`));
     const photoBox = document.getElementById('modal-photos');
-    if (photoBox) hydrateImages(photoBox);
+    if (photoBox) showReportPhotos(r, photoBox);
+  }
+
+  // Photos : base en ligne (30 jours) puis copie gardée sur ce téléphone
+  async function showReportPhotos(r, box) {
+    const note = document.getElementById('modal-photos-note');
+    if (!window.PhotoCache) return hydrateImages(box);
+    const info = await PhotoCache.render(box, r, authFetch);
+    if (!info.total) {
+      box.innerHTML = '';
+      note.textContent = "Photos supprimées de la base après 30 jours et absentes de ce téléphone. L'administrateur en garde une sauvegarde.";
+      return;
+    }
+    note.textContent = info.localOnly
+      ? 'Supprimées de la base en ligne — affichées depuis la copie gardée sur ce téléphone.'
+      : 'Une copie est gardée sur ce téléphone (la base en ligne les garde 30 jours).';
+    const btn = document.getElementById('modal-save-photos');
+    btn.hidden = false;
+    btn.addEventListener('click', () => PhotoCache.saveFiles(info.blobs, `rapport-${String(r.dateRapport).slice(0, 10)}`));
   }
 
   document.getElementById('fr-btn-filtrer').addEventListener('click', loadReports);
@@ -454,6 +474,10 @@
       loadReports();
     },
     activateTab,
+    reloadAnnouncements: () => {
+      loadAnnouncementBanner();
+      if (document.getElementById('panel-annonces').classList.contains('active')) loadAnnouncementsList();
+    },
     _ready: false,
     _cbs: [],
     onReady(cb) {

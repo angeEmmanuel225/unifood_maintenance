@@ -35,6 +35,7 @@ function buildFilters(req) {
   else if (technicien) filters.technicien = technicien;
   if (departement) filters.departement = departement;
   if (statutRapport) filters.statutRapport = statutRapport;
+  if (req.user.role === 'responsable' && req.query.nonExportes === '1') filters.exporte = false;
   if (dateDebut || dateFin) {
     filters.dateRapport = {};
     if (dateDebut) filters.dateRapport.$gte = toDayStart(dateDebut);
@@ -229,7 +230,9 @@ exports.getStats = async (req, res) => {
 // GET /api/reports/export/pdf (administrateur) — mêmes filtres que la liste, signature + photos incluses
 exports.exportReportsPDF = async (req, res) => {
   try {
-    const reports = await Report.find(buildFilters(req)).select('+signature').sort({ dateRapport: -1, createdAt: -1 }).limit(150);
+    // Sauvegarde (nonExportes=1) : les plus anciennes d'abord, par lots de 150
+    const order = req.query.nonExportes === '1' ? 1 : -1;
+    const reports = await Report.find(buildFilters(req)).select('+signature').sort({ dateRapport: order, createdAt: order }).limit(150);
     const ids = reports.map((r) => r._id);
     await Report.updateMany({ _id: { $in: ids } }, { $set: { exporte: true } });
     const departments = await Department.find().sort({ ordre: 1, nom: 1 });
@@ -237,6 +240,37 @@ exports.exportReportsPDF = async (req, res) => {
     generateReportsBulkPDF(reports, res, { departments, photosByReport });
   } catch (err) {
     res.status(500).json({ message: "Erreur lors de l'export PDF des rapports.", error: err.message });
+  }
+};
+
+// GET /api/reports/backup-status (administrateur) — alerte de sauvegarde avant suppression des photos
+const DAY_MS = 24 * 3600 * 1000;
+exports.getBackupStatus = async (req, res) => {
+  try {
+    const days = ReportPhoto.RETENTION_DAYS;
+    const now = Date.now();
+    // Photos qui seront supprimées de la base dans 7 jours ou moins
+    const soon = await ReportPhoto.find({ createdAt: { $lt: new Date(now - (days - 7) * DAY_MS) } }).select('report createdAt');
+    const firstPhoto = new Map();
+    soon.forEach((p) => {
+      const k = String(p.report);
+      if (!firstPhoto.has(k) || p.createdAt < firstPhoto.get(k)) firstPhoto.set(k, p.createdAt);
+    });
+    const urgent = firstPhoto.size
+      ? await Report.find({ _id: { $in: [...firstPhoto.keys()] }, exporte: false }).select('_id')
+      : [];
+    let premiereSuppression = null;
+    urgent.forEach((r) => {
+      const d = new Date(firstPhoto.get(String(r._id)).getTime() + days * DAY_MS);
+      if (!premiereSuppression || d < premiereSuppression) premiereSuppression = d;
+    });
+    const [enRetard, nonExportes] = await Promise.all([
+      Report.countDocuments({ exporte: false, dateRapport: { $lt: new Date(now - 20 * DAY_MS) } }),
+      Report.countDocuments({ exporte: false }),
+    ]);
+    res.json({ urgents: urgent.length, premiereSuppression, enRetard, nonExportes, retentionJours: days });
+  } catch (err) {
+    res.status(500).json({ message: 'Erreur.', error: err.message });
   }
 };
 

@@ -12,6 +12,7 @@ const orderRoutes = require('./routes/order.routes');
 const announcementRoutes = require('./routes/announcement.routes');
 const userRoutes = require('./routes/user.routes');
 const withdrawalRoutes = require('./routes/withdrawal.routes');
+const pushRoutes = require('./routes/push.routes');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
+app.use('/api/push', pushRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'UNIFOOD TOGO - Maintenance API', time: new Date().toISOString() });
