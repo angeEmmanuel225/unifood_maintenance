@@ -182,7 +182,7 @@ function drawReportSheet(doc, report, { departments = [], photos = [] } = {}) {
   y = drawTableHeader(doc, y);
   const entries = report.entries || [];
   if (!entries.length) {
-    doc.font('Helvetica').fontSize(9).fillColor(theme.colors.gray).text('Aucune ligne dans cette fiche.', LEFT + 4, y + 8);
+    doc.font('Helvetica').fontSize(9).fillColor(theme.colors.gray).text(photos.length || report.nbPhotos ? 'Rapport écrit joint en photo (voir pages suivantes).' : 'Aucune ligne dans cette fiche.', LEFT + 4, y + 8);
     y += 30;
   }
   entries.forEach((entry, i) => {

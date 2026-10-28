@@ -350,7 +350,8 @@
         if (!r.machineConcernee || !r.descriptionPanne) return fail(`Ligne ${i + 1} : indique la machine et la panne (ou l'observation).`, rowEls[i]);
         entries.push(r);
       }
-      if (!entries.length) return fail('Ajoute au moins une panne dans le tableau.');
+      // La photo du rapport écrit remplace le tableau : pas besoin de rédiger une panne
+      if (!entries.length && !photos.length) return fail('Remplis le tableau ou prends en photo ton rapport écrit.');
       if (!sigHasInk) return fail("Signe la fiche avant de l'envoyer (cadre en bas).");
 
       const payload = {
@@ -374,7 +375,11 @@
           showToast(data.message || "Erreur lors de l'envoi (ta fiche est gardée en brouillon).", 'error');
           return;
         }
-        showToast(`Fiche envoyée à l'administrateur (${data.lignes} ligne(s) au total aujourd'hui).`);
+        showToast(
+          entries.length
+            ? `Fiche envoyée à l'administrateur (${data.lignes} ligne(s) au total aujourd'hui).`
+            : "Rapport en photo envoyé à l'administrateur."
+        );
         localStorage.removeItem(draftKey);
         clearTimeout(localTimer);
         clearTimeout(remoteTimer);

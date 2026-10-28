@@ -75,12 +75,15 @@ exports.createReport = async (req, res) => {
     if (!Report.HORAIRES.includes(horaire)) return res.status(400).json({ message: "Choisis l'horaire de travail." });
     if (!dateRapport || Number.isNaN(new Date(dateRapport).getTime())) return res.status(400).json({ message: 'La date est invalide.' });
     if (!departement) return res.status(400).json({ message: 'Département manquant.' });
-    if (!Array.isArray(entries) || !entries.length) return res.status(400).json({ message: 'Ajoute au moins une ligne dans le tableau.' });
-    if (entries.length > MAX_ROWS) return res.status(400).json({ message: `Maximum ${MAX_ROWS} lignes par envoi.` });
+    const hasPhotos = Array.isArray(photos) && photos.length > 0;
+    if (entries !== undefined && entries !== null && !Array.isArray(entries)) return res.status(400).json({ message: 'Tableau invalide.' });
+    const rawEntries = Array.isArray(entries) ? entries : [];
+    if (!rawEntries.length && !hasPhotos) return res.status(400).json({ message: 'Remplis le tableau ou ajoute la photo de ton rapport écrit.' });
+    if (rawEntries.length > MAX_ROWS) return res.status(400).json({ message: `Maximum ${MAX_ROWS} lignes par envoi.` });
 
     const cleaned = [];
-    for (let i = 0; i < entries.length; i++) {
-      const e = entries[i] || {};
+    for (let i = 0; i < rawEntries.length; i++) {
+      const e = rawEntries[i] || {};
       const machine = String(e.machineConcernee || '').trim();
       const panne = String(e.descriptionPanne || '').trim();
       const tache = String(e.actionMenee || '').trim();
@@ -96,7 +99,8 @@ exports.createReport = async (req, res) => {
         heureFin: /^\d{2}:\d{2}$/.test(hf) ? hf : '',
       });
     }
-    if (!cleaned.length) return res.status(400).json({ message: 'Le tableau est vide.' });
+    // Une photo du rapport écrit suffit : le tableau peut alors rester vide
+    if (!cleaned.length && !hasPhotos) return res.status(400).json({ message: 'Remplis le tableau ou ajoute la photo de ton rapport écrit.' });
 
     const sig = decodeDataUrl(signature, ['image/png']);
     if (!sig) return res.status(400).json({ message: "Merci de signer la fiche avant de l'envoyer." });
@@ -152,7 +156,7 @@ exports.createReport = async (req, res) => {
     // La fiche est partie : le brouillon n'a plus lieu d'être
     await ReportDraft.deleteOne({ technicien: req.user._id });
 
-    res.status(201).json({ message: 'Fiche envoyée.', id: report._id, lignes: report.entries.length });
+    res.status(201).json({ message: 'Fiche envoyée.', id: report._id, lignes: report.entries.length, photos: photoDocs.length });
   } catch (err) {
     res.status(500).json({ message: "Erreur lors de l'envoi du rapport.", error: err.message });
   }

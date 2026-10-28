@@ -5,8 +5,8 @@ const { google } = require('googleapis');
 // Colle ici les valeurs de ton "OAuth Client ID" (type Application de bureau)
 // créé dans Google Cloud Console.
 // ============================================================
-const CLIENT_ID = '305204329498-mkmvp8t6vs09lchoa1r57atkptklfe9j.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
+const CLIENT_ID = 'COLLE_ICI_TON_CLIENT_ID';
+const CLIENT_SECRET = 'COLLE_ICI_TON_CLIENT_SECRET';
 
 const PORT = 3000;
 const REDIRECT_URI = `http://localhost:${PORT}`;

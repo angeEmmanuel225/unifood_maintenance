@@ -319,7 +319,7 @@
       <tr>
         <td class="cell-mono">${formatDateFR(r.dateRapport)}</td>
         <td>${escapeHtml(horaireLabel(r.horaire))}</td>
-        <td class="cell-muted">${r.entries.length} panne(s) — ${escapeHtml(truncate(machines, 40))}${r.nbPhotos ? ` · ${icon('camera', 12)} ${r.nbPhotos}` : ''}</td>
+        <td class="cell-muted">${r.entries.length ? `${r.entries.length} panne(s) — ${escapeHtml(truncate(machines, 40))}` : 'Rapport en photo'}${r.nbPhotos ? ` · ${icon('camera', 12)} ${r.nbPhotos}` : ''}</td>
         <td><span class="stamp ${stampClass(r.statutRapport)}">${escapeHtml(r.statutRapport)}</span></td>
         <td><button class="btn btn-ghost btn-sm view-report" data-id="${r._id}">${icon('eye', 15)}</button></td>
       </tr>`;
@@ -337,7 +337,8 @@
     const r = await res.json();
     const rows = r.entries
       .map((e) => `<tr><td>${escapeHtml(e.machineConcernee)}</td><td>${escapeHtml(e.descriptionPanne)}</td><td>${escapeHtml(e.actionMenee)}</td><td>${escapeHtml(e.heureDebut)}</td><td>${escapeHtml(e.heureFin)}</td></tr>`)
-      .join('');
+      .join('') ||
+      `<tr><td colspan="5" style="text-align:center; color:var(--gray);">${r.nbPhotos ? 'Rapport écrit envoyé en photo (voir ci-dessous).' : 'Aucune ligne.'}</td></tr>`;
     const photos = (r.photos || []).map((p) => `<img class="att-img" data-src="/reports/photo/${p._id}" alt="Photo du rapport">`).join('');
     openModal(
       `

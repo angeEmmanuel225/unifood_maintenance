@@ -216,7 +216,7 @@
         <td>${escapeHtml(r.technicienNom)}</td>
         <td>${escapeHtml(truncate(r.departement, 28))}</td>
         <td>${escapeHtml(horaireLabel(r.horaire))}</td>
-        <td class="cell-muted">${r.entries.length} panne(s) — ${escapeHtml(truncate(machines, 30))}${r.nbPhotos ? ` · ${icon('camera', 12)} ${r.nbPhotos}` : ''}</td>
+        <td class="cell-muted">${r.entries.length ? `${r.entries.length} panne(s) — ${escapeHtml(truncate(machines, 30))}` : 'Rapport en photo'}${r.nbPhotos ? ` · ${icon('camera', 12)} ${r.nbPhotos}` : ''}</td>
         <td><select class="statut-rapport-select" data-id="${r._id}" style="padding:5px 8px; font-size:0.78rem;">${['Nouveau', 'Lu', 'Traité'].map((s) => `<option value="${s}" ${r.statutRapport === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
         <td>${exportBadge(r.exporte)}</td>
         <td style="white-space:nowrap;">
@@ -261,7 +261,8 @@
       HORAIRES.map(([v, l]) => `<span class="tick"><i>${v === r.horaire ? '✓' : ''}</i> ${l}</span>`).join('');
     const rows = r.entries
       .map((e) => `<tr><td>${escapeHtml(e.machineConcernee)}</td><td>${escapeHtml(e.descriptionPanne)}</td><td>${escapeHtml(e.actionMenee)}</td><td>${escapeHtml(e.heureDebut)}</td><td>${escapeHtml(e.heureFin)}</td></tr>`)
-      .join('');
+      .join('') ||
+      `<tr><td colspan="5" style="text-align:center; color:var(--gray);">${r.nbPhotos ? 'Rapport écrit envoyé en photo (voir ci-dessous).' : 'Aucune ligne.'}</td></tr>`;
     const photos = (r.photos || []).map((p) => `<img class="att-img" data-src="/reports/photo/${p._id}" alt="Photo du rapport">`).join('');
     openModal(
       `
